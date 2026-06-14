@@ -1,0 +1,103 @@
+[
+  {
+    "id": "3db22c50-7104-4eff-ba49-fba87a9e3399",
+    "username": "Wahid",
+    "password": "d97086919b6522e13ba9b46c04902c38372102218a4b3ef2f45ac2a80e9fd240",
+    "role": "organization_admin",
+    "email": "wahidjamadar2020@gmail.com",
+    "status": "active",
+    "last_login": "2026-05-12T13:11:33.951968",
+    "created_at": "2026-04-22T21:17:33.474646",
+    "organization_id": "559ed3cc-13c4-45d7-b08b-c5602c85d0bd",
+    "previous_login": "2026-05-12T11:32:54.109462",
+    "total_logins": 41,
+    "force_logout_at": "2026-05-11T19:13:31.237244"
+  },
+  {
+    "id": "aa38e3e6-f7a6-4e3e-9eba-dfa096ae68ae",
+    "username": "Wahid Jamadar",
+    "password": "pbkdf2_sha256$100000$5c24e2edb7654e0fb394f075a8275e74$0b35c210c92a3130fa99579c8f071c2902723a6729d72479664c787f25b26331",
+    "role": "super_admin",
+    "email": "wahid.jamadar@listspl.co.in",
+    "status": "active",
+    "last_login": "2026-05-25T12:40:14.037028",
+    "created_at": "2026-04-23T11:32:30.135552",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "total_logins": 93,
+    "previous_login": "2026-05-25T12:08:18.652322",
+    "force_logout_at": "2026-05-19T17:56:17.258490"
+  },
+  {
+    "id": "b7b4984d-eab1-4343-ba16-02300d37b01e",
+    "username": "Omkar Patil",
+    "password": "d97086919b6522e13ba9b46c04902c38372102218a4b3ef2f45ac2a80e9fd240",
+    "role": "super_admin",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "email": "omkar.patil@listspl.co.in",
+    "status": "active",
+    "last_login": "2026-05-08T13:33:40.248281",
+    "created_at": "2026-04-28T10:00:00",
+    "previous_login": "2026-05-04T15:52:00",
+    "total_logins": 15
+  },
+  {
+    "id": "36dcd7cf-dec4-45c9-9bae-285c44aa4913",
+    "username": "Pravin Pise",
+    "password": "d97086919b6522e13ba9b46c04902c38372102218a4b3ef2f45ac2a80e9fd240",
+    "role": "organization_viewer",
+    "organization_id": "4ca47748-5f59-42f6-9ee1-a3be80c992b4",
+    "email": "pravin.pise@listspl.co.in",
+    "status": "active",
+    "last_login": null,
+    "created_at": "2026-05-04T11:27:12.225922",
+    "total_logins": 1
+  },
+  {
+    "id": "b46bf0f9-7b54-4dc8-95ab-a855df4d4a00",
+    "username": "Pavan Ichalkaranje",
+    "password": "d97086919b6522e13ba9b46c04902c38372102218a4b3ef2f45ac2a80e9fd240",
+    "role": "organization_viewer",
+    "organization_id": "3e3b8c42-5ab7-48eb-b3c3-fec660d8e341",
+    "email": "pavan.ichalkaranje@listspl.co.in",
+    "status": "active",
+    "last_login": null,
+    "created_at": "2026-05-04T15:54:33.739359",
+    "total_logins": 1
+  },
+  {
+    "id": "a7c2f466-65ab-4529-bee6-e10b051cec7f",
+    "username": "Vaibhav Deshpande",
+    "password": "d97086919b6522e13ba9b46c04902c38372102218a4b3ef2f45ac2a80e9fd240",
+    "role": "super_admin",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "email": "vaibhav.deshpande@listspl.co.in",
+    "status": "active",
+    "last_login": null,
+    "created_at": "2026-05-04T15:58:08.158652",
+    "total_logins": 1
+  },
+  {
+    "id": "069a627b-414e-459f-8928-c7615b8e5f26",
+    "username": "Avinash Mali",
+    "password": "39d08ba65b54623aff53221db820569a8f4acd3e75d93fb00159a6d0883b0de2",
+    "role": "super_admin",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "email": "avinash.mali@listspl.co.in",
+    "status": "active",
+    "last_login": null,
+    "previous_login": null,
+    "created_at": "2026-05-13T19:20:23.138322"
+  },
+  {
+    "id": "f1d88e72-e414-46b0-b3af-701123981fa2",
+    "username": "admin",
+    "password": "pbkdf2_sha256$100000$d1a81725738e08185ff6dd6052879d66$a6ef6d9efae40e230a34048d7b28bfc1089e4ecf5e14c0e9e0b2ba9ec20f4952",
+    "role": "super_admin",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "email": "admin",
+    "status": "active",
+    "last_login": null,
+    "previous_login": null,
+    "created_at": "2026-05-19T16:14:48.123610"
+  }
+]

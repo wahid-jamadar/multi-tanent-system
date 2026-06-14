@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FileBridge - Initializing System...</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+</head>
+
+<body class="splash-body">
+
+  <!-- Background Effects -->
+  <div class="splash-bg">
+    <div class="cyber-grid opacity-25"></div>
+    <div class="glow-orb orb-1" style="width: 800px; height: 800px; opacity: 0.1;"></div>
+    <div class="glow-orb orb-2" style="width: 600px; height: 600px; opacity: 0.1;"></div>
+    <div class="particles" id="splash-particles"></div>
+  </div>
+
+  <!-- Central Content -->
+  <div class="splash-centerpiece">
+
+    <!-- Logo with Ring -->
+    <div class="splash-logo-wrapper">
+      <div class="splash-ring splash-ring-outer"></div>
+      <div class="splash-ring splash-ring-inner"></div>
+      <div class="splash-logo-container">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="FileBridge" class="splash-logo-img">
+        <div class="splash-logo-sweep"></div>
+      </div>
+    </div>
+
+    <!-- Branding -->
+    <div class="splash-text-container">
+      <h1 class="splash-title">FileBridge</h1>
+      <div class="splash-tagline">Secure Infrastructure Operations</div>
+    </div>
+
+    <!-- Progress Loader -->
+    <div class="splash-loader-wrapper">
+      <div class="splash-progress-container">
+        <div class="splash-progress-bar" id="splash-bar">
+          <div class="splash-progress-shine"></div>
+        </div>
+      </div>
+      <div class="splash-loader-footer">
+        <span class="splash-status-text">INITIALIZING CORE SERVICES<span class="splash-dots">...</span></span>
+        <span class="splash-counter" id="splash-counter">0%</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Setup Particles
+      const container = document.getElementById('splash-particles');
+      for (let i = 0; i < 40; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'splash-particle';
+        particle.style.left = Math.random() * 100 + 'vw';
+        particle.style.top = Math.random() * 100 + 'vh';
+        const size = Math.random() * 3 + 1;
+        particle.style.width = size + 'px';
+        particle.style.height = size + 'px';
+        particle.style.animationDuration = (Math.random() * 5 + 5) + 's';
+        particle.style.animationDelay = (Math.random() * 2) + 's';
+        container.appendChild(particle);
+      }
+
+      // Progress Animation (Exactly 4 seconds)
+      const duration = 4000;
+      const start = performance.now();
+      const bar = document.getElementById('splash-bar');
+      const counter = document.getElementById('splash-counter');
+      const body = document.body;
+
+      // Cinematic ease out quartic function
+      function easeOutQuart(x) {
+        return 1 - Math.pow(1 - x, 4);
+      }
+
+      function updateLoader(time) {
+        let elapsed = time - start;
+        let progress = Math.min(1, Math.max(0, elapsed / duration));
+
+        // Use an easing function for a smoother, cinematic loading feel
+        // but we still ensure it hits exactly 100% at the 4s mark.
+        let easedProgress = easeOutQuart(progress);
+
+        // Actually, pure linear with subtle CSS transitions might be more authentic for a loading bar.
+        // Let's use linear with slight math smoothing for the cinematic number counter.
+        let percent = Math.floor(progress * 100);
+
+        counter.innerText = percent + "%";
+        bar.style.width = percent + "%";
+
+        if (progress < 1) {
+          requestAnimationFrame(updateLoader);
+        } else {
+          // Finished loading
+          body.classList.add('splash-fade-out');
+          setTimeout(() => {
+            window.location.href = "{{ url_for('login') }}";
+          }, 600); // Wait for the fade-out CSS transition before redirect
+        }
+      }
+      requestAnimationFrame(updateLoader);
+    });
+  </script>
+</body>
+
+</html>

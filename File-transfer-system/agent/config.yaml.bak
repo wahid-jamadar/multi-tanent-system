@@ -1,0 +1,27 @@
+agent_token: AVTROi98ljJ9kjPEOvdKahImIG8UkClEHWuZVAnjpsqDnIVC4Z8ICxOT6Is_j3SP
+agent_uuid: 0be3266a-f2e4-48be-a9d3-f3f8ab9f022c
+allowed_paths: &id001
+- all
+backend_url: https://172.100.31.40:5001
+base_path: C:\
+bootstrap_token: R52FNdbbPsUXFFU04tWRRN00RfScXpzh1ZvwQf_r_wY
+heartbeat_interval: 30
+log_level: INFO
+server_name: BANK-TRANSFER-AGENT
+machine_fingerprint: 18e79537da9696a0d22eb38b1de134c087eb4e42f5d2fbbf535d980f8e74cff6
+agent:
+  id: 0be3266a-f2e4-48be-a9d3-f3f8ab9f022c
+  token: AVTROi98ljJ9kjPEOvdKahImIG8UkClEHWuZVAnjpsqDnIVC4Z8ICxOT6Is_j3SP
+  name: BANK-TRANSFER-AGENT
+server:
+  url: https://172.100.31.40:5001
+sync:
+  folders: *id001
+  rules: []
+monitoring:
+  heartbeat_interval: 30
+transfer:
+  chunk_size: 1048576
+  retry_limit: 5
+  compression: true
+  encryption: true

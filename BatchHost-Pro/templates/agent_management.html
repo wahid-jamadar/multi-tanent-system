@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% set active_page = "agent-management" %}
+{% block title %}Agent Management{% endblock %}
+{% block page_title %}Agent Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-heading">Agent Management</div>
+    <div class="page-subtitle">Configure and manage runner machines</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-secondary btn-sm" onclick="loadAgents()">Refresh</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Hostname</th>
+          <th>Agent ID</th>
+          <th>OS</th>
+          <th>Organization</th>
+          <th>Status</th>
+          <th style="text-align:center">Edit</th>
+          <th style="text-align:center">Control</th>
+          <th style="text-align:center">Delete</th>
+        </tr>
+      </thead>
+      <tbody id="agentTableBody">
+        <tr>
+          <td colspan="6" style="text-align:center;padding:40px;color:var(--text3)">Loading agents...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Agent Modal -->
+<div class="modal-overlay" id="editAgentModal">
+  <div class="modal">
+    <div class="modal-title">Edit Agent Settings</div>
+    <form id="editAgentForm">
+      <input type="hidden" id="editAgentId">
+      
+      <div class="form-row">
+        <label for="editHostname">Hostname</label>
+        <input type="text" id="editHostname" placeholder="e.g. WORKSTATION-01" required>
+      </div>
+      
+      {% if user.role == 'super_admin' %}
+      <div class="form-row">
+        <label for="editOrg">Organization</label>
+        <select id="editOrg">
+          <!-- Populated via JS -->
+        </select>
+      </div>
+      {% endif %}
+      
+      <div class="form-row">
+        <label>Agent Token</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="editToken" readonly style="font-family:var(--mono); font-size:12px; background:var(--bg);">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="regenerateToken()">Regenerate</button>
+        </div>
+        <div style="font-size:11px; color:var(--text3); margin-top:4px;">
+          Note: Regenerating the token will disconnect the agent until updated on the machine.
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allAgents = [];
+let organizations = [];
+const IS_ADMIN = {{ 'true' if user.role == 'super_admin' else 'false' }};
+
+async function loadOrgs() {
+  {% if user.role == 'super_admin' %}
+  const r = await fetch('/api/organizations');
+  organizations = await r.json();
+  const select = document.getElementById('editOrg');
+  if (select) {
+    select.innerHTML = organizations.map(o => `<option value="${o.id}">${escapeHtml(o.name)}</option>`).join('');
+  }
+  {% endif %}
+}
+
+async function loadAgents() {
+  try {
+    const r = await fetch('/api/agents');
+    allAgents = await r.json();
+    renderAgents();
+  } catch (e) {
+    flash('Error loading agents', 'error');
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+function renderAgents() {
+  const tbody = document.getElementById('agentTableBody');
+  if (allAgents.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3)">No agents found</td></tr>`;
+    return;
+  }
+  
+  tbody.innerHTML = allAgents.map(a => `
+    <tr>
+      <td class="td-name">${escapeHtml(a.hostname)}</td>
+      <td style="font-family:var(--mono); font-size:11px;">${escapeHtml(a.id)}</td>
+      <td><span class="badge gray">${escapeHtml(a.os_type)}</span></td>
+      <td>${escapeHtml(a.organization_name)}</td>
+      <td>
+        <span class="badge ${a.status === 'online' ? 'green' : 'red'}">${a.status}</span>
+        ${a.enabled === false ? '<span class="badge gray" style="margin-left:4px;">Disabled</span>' : ''}
+      </td>
+      <td style="text-align:center">
+        <button class="btn btn-secondary btn-sm" onclick="openEditModal('${a.id}')">Edit</button>
+      </td>
+      <td style="text-align:center">
+        ${IS_ADMIN ? `
+          <button class="btn ${a.enabled === false ? 'btn-primary' : 'btn-danger'} btn-sm" onclick="toggleAgentEnabled('${a.id}', ${a.enabled !== false})">
+            ${a.enabled === false ? 'Enable' : 'Disable'}
+          </button>
+        ` : '<span style="color:var(--text3); font-size:11px;">-</span>'}
+      </td>
+      <td style="text-align:center">
+        <button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}', '${escapeHtml(a.hostname)}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openEditModal(agentId) {
+  const agent = allAgents.find(a => a.id === agentId);
+  if (!agent) return;
+  
+  document.getElementById('editAgentId').value = agent.id;
+  document.getElementById('editHostname').value = agent.hostname;
+  
+  const orgSelect = document.getElementById('editOrg');
+  if (orgSelect) {
+    orgSelect.value = agent.organization_id;
+  }
+  
+  document.getElementById('editToken').value = '••••••••••••••••'; // Hidden initially
+  
+  // We need to fetch the full agent data to see the token
+  fetchAgentDetails(agentId);
+  
+  document.getElementById('editAgentModal').classList.add('open');
+}
+
+async function fetchAgentDetails(agentId) {
+    try {
+        const r = await fetch(`/api/agents/${agentId}`);
+        const agent = await r.json();
+        if (agent.token) {
+            document.getElementById('editToken').value = agent.token;
+        }
+    } catch(e) {
+        flash('Error fetching agent details', 'error');
+    }
+}
+
+function closeModal() {
+  document.getElementById('editAgentModal').classList.remove('open');
+}
+
+async function regenerateToken() {
+  if (!confirm('Are you sure you want to regenerate the agent token? The current agent will be disconnected.')) return;
+  
+  const agentId = document.getElementById('editAgentId').value;
+  try {
+    const r = await fetch(`/api/agents/${agentId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ regenerate_token: true })
+    });
+    const result = await r.json();
+    if (result.success) {
+      document.getElementById('editToken').value = result.agent.token;
+      flash('Token regenerated successfully', 'success');
+      loadAgents();
+    } else {
+      flash(result.error || 'Error regenerating token', 'error');
+    }
+  } catch (e) {
+    flash('Error connecting to server', 'error');
+  }
+}
+
+document.getElementById('editAgentForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const agentId = document.getElementById('editAgentId').value;
+  const hostname = document.getElementById('editHostname').value;
+  const data = { hostname };
+  
+  const orgSelect = document.getElementById('editOrg');
+  if (orgSelect) {
+    data.organization_id = orgSelect.value;
+  }
+  
+  try {
+    const r = await fetch(`/api/agents/${agentId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await r.json();
+    if (result.success) {
+      flash('Agent updated successfully', 'success');
+      closeModal();
+      loadAgents();
+    } else {
+      flash(result.error || 'Error updating agent', 'error');
+    }
+  } catch (e) {
+    flash('Error connecting to server', 'error');
+  }
+};
+
+async function deleteAgent(agentId, hostname) {
+  if (!confirm(`Are you sure you want to remove agent "${hostname}"? This will also remove all associated scripts.`)) {
+    return;
+  }
+  try {
+    const r = await fetch(`/api/agents/${agentId}`, { method: 'DELETE' });
+    const result = await r.json();
+    if (result.success) {
+      flash('Agent removed successfully', 'success');
+      loadAgents();
+    } else {
+      flash(result.error || 'Error removing agent', 'error');
+    }
+  } catch (e) {
+    flash('Error connecting to server', 'error');
+  }
+}
+
+async function toggleAgentEnabled(agentId, currentEnabled) {
+  const newEnabled = !currentEnabled;
+  const action = newEnabled ? 'enable' : 'disable';
+  if (!confirm(`Are you sure you want to ${action} this agent?`)) return;
+  
+  try {
+    const r = await fetch(`/api/agents/${agentId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: newEnabled })
+    });
+    const result = await r.json();
+    if (result.success) {
+      flash(`Agent ${action}d successfully`, 'success');
+      loadAgents();
+    } else {
+      flash(result.error || `Error ${action}ing agent`, 'error');
+    }
+  } catch (e) {
+    flash('Error connecting to server', 'error');
+  }
+}
+
+loadOrgs().then(loadAgents);
+</script>
+{% endblock %}

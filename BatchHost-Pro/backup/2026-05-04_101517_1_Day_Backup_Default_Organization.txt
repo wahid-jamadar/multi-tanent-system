@@ -1,0 +1,100 @@
+--- backup_scope.txt ---
+one day backup with date 2026-05-04
+
+--- organization.txt ---
+{
+  "id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+  "name": "Default Organization",
+  "status": "active",
+  "is_default": true,
+  "created_at": "2026-04-27T20:26:07.791823"
+}
+
+--- agents.txt ---
+[
+  {
+    "id": "test123",
+    "hostname": "Lin-30.19-machine",
+    "os_type": "linux",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "status": "offline",
+    "token": "1e38e950-50f8-4f37-ad76-1ac89d5f2450",
+    "cpu": 0,
+    "memory": 0,
+    "scripts": [],
+    "last_heartbeat": "2026-04-30T18:14:04.721863",
+    "registered_at": "2026-04-30T18:14:04.721863",
+    "device_key": "abc123",
+    "last_ip": "172.100.30.19"
+  }
+]
+
+--- scripts.txt ---
+[]
+
+--- alerts.txt ---
+[]
+
+--- users.txt ---
+[
+  {
+    "id": "aa38e3e6-f7a6-4e3e-9eba-dfa096ae68ae",
+    "username": "admin",
+    "role": "viewer",
+    "email": "wahid.jamadar@listspl.co.in",
+    "status": "active",
+    "last_login": "2026-04-30T12:41:46.674105",
+    "created_at": "2026-04-23T11:32:30.135552",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd"
+  },
+  {
+    "id": "3d134e13-e728-43a4-acf0-b98840f5295d",
+    "username": "pravin",
+    "role": "admin",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "email": "pravin.pise@listspl.co.in",
+    "status": "active",
+    "last_login": null,
+    "created_at": "2026-04-30T11:52:15.872433"
+  }
+]
+
+--- server.txt ---
+2026-05-04 10:13:43,759 INFO [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+2026-05-04 10:13:43,759 INFO [33mPress CTRL+C to quit[0m
+2026-05-04 10:13:43,784 INFO  * Restarting with watchdog (windowsapi)
+2026-05-04 10:13:44,199 WARNING  * Debugger is active!
+2026-05-04 10:13:44,205 INFO  * Debugger PIN: 399-376-451
+2026-05-04 10:13:50,637 INFO 172.100.31.40 - - [04/May/2026 10:13:50] "[32mGET / HTTP/1.1[0m" 302 -
+2026-05-04 10:13:50,665 INFO 172.100.31.40 - - [04/May/2026 10:13:50] "GET /login HTTP/1.1" 200 -
+2026-05-04 10:13:50,962 INFO 172.100.31.40 - - [04/May/2026 10:13:50] "GET /images/login-page-bg-image.png HTTP/1.1" 200 -
+2026-05-04 10:13:51,030 INFO 172.100.31.40 - - [04/May/2026 10:13:51] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-04 10:13:53,706 INFO Alert created: [CRITICAL] AGENT_OFFLINE for agent 216d6e21-8a79-42fb-950a-d43bf8ba7787 - Agent WAHID has gone offline (no heartbeat for 164630s)
+2026-05-04 10:13:53,707 WARNING Agent 216d6e21-8a79-42fb-950a-d43bf8ba7787 marked offline
+2026-05-04 10:14:01,306 INFO User login successful: wahidjamadar2020@gmail.com (3db22c50-7104-4eff-ba49-fba87a9e3399)
+2026-05-04 10:14:01,321 INFO 172.100.31.40 - - [04/May/2026 10:14:01] "POST /api/auth/login HTTP/1.1" 200 -
+2026-05-04 10:14:02,038 INFO 172.100.31.40 - - [04/May/2026 10:14:02] "GET /dashboard HTTP/1.1" 200 -
+2026-05-04 10:14:02,175 INFO 172.100.31.40 - - [04/May/2026 10:14:02] "POST /api/auth/presence HTTP/1.1" 200 -
+2026-05-04 10:14:02,181 INFO 172.100.31.40 - - [04/May/2026 10:14:02] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:14:02,194 INFO 172.100.31.40 - - [04/May/2026 10:14:02] "GET /api/dashboard/stats HTTP/1.1" 200 -
+2026-05-04 10:14:02,204 INFO 172.100.31.40 - - [04/May/2026 10:14:02] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:14:10,125 INFO 172.100.31.40 - - [04/May/2026 10:14:10] "GET /admin_logs HTTP/1.1" 200 -
+2026-05-04 10:14:10,217 INFO 172.100.31.40 - - [04/May/2026 10:14:10] "POST /api/auth/presence HTTP/1.1" 200 -
+2026-05-04 10:14:10,226 INFO 172.100.31.40 - - [04/May/2026 10:14:10] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:14:10,235 INFO 172.100.31.40 - - [04/May/2026 10:14:10] "GET /api/admin_logs HTTP/1.1" 200 -
+2026-05-04 10:14:20,231 INFO 172.100.31.40 - - [04/May/2026 10:14:20] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:14:25,233 INFO 172.100.31.40 - - [04/May/2026 10:14:25] "POST /api/auth/presence HTTP/1.1" 200 -
+2026-05-04 10:14:30,821 INFO 172.100.31.40 - - [04/May/2026 10:14:30] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:14:40,831 INFO 172.100.31.40 - - [04/May/2026 10:14:40] "POST /api/auth/presence HTTP/1.1" 200 -
+2026-05-04 10:14:40,840 INFO 172.100.31.40 - - [04/May/2026 10:14:40] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:14:50,826 INFO 172.100.31.40 - - [04/May/2026 10:14:50] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:14:55,827 INFO 172.100.31.40 - - [04/May/2026 10:14:55] "POST /api/auth/presence HTTP/1.1" 200 -
+2026-05-04 10:15:00,234 INFO 172.100.31.40 - - [04/May/2026 10:15:00] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:15:01,121 INFO 172.100.31.40 - - [04/May/2026 10:15:01] "GET /backups HTTP/1.1" 200 -
+2026-05-04 10:15:01,198 INFO 172.100.31.40 - - [04/May/2026 10:15:01] "POST /api/auth/presence HTTP/1.1" 200 -
+2026-05-04 10:15:01,216 INFO 172.100.31.40 - - [04/May/2026 10:15:01] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:15:01,224 INFO 172.100.31.40 - - [04/May/2026 10:15:01] "GET /api/backups HTTP/1.1" 200 -
+2026-05-04 10:15:11,183 INFO 172.100.31.40 - - [04/May/2026 10:15:11] "GET /api/alerts HTTP/1.1" 200 -
+2026-05-04 10:15:16,180 INFO 172.100.31.40 - - [04/May/2026 10:15:16] "POST /api/auth/presence HTTP/1.1" 200 -
+
+

@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% block title %}File Transfer - FileBridge{% endblock %}
+
+{% block content %}
+<div class="transfer-hero d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Server File Orchestration &amp; Synchronization</h1>
+    <p class="text-secondary mb-0">Coordinate secure copy, move, and folder sync operations across managed FileBridge agents.</p>
+  </div>
+  <div class="hero-status-grid" aria-label="System security status">
+    <span class="ops-status-pill"><span class="live-indicator"></span>Secure Channel Active</span>
+    <span class="ops-status-pill"><span class="status-dot status-dot-info"></span>Agents Connected</span>
+    <span class="ops-status-pill"><span class="status-dot status-dot-lock"></span>Encryption Enabled</span>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Source & Destination Cards -->
+  <div class="col-lg-8">
+    <div class="node-workflow row g-3">
+      <!-- Source -->
+      <div class="col-md-6">
+        <div class="section-panel node-panel h-100">
+          <div class="d-flex align-items-center gap-2 mb-4">
+            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 24px; height: 24px; font-size: 12px;">1</div>
+            <h2 class="h6 mb-0 fw-bold">Source Node</h2>
+          </div>
+          
+          <div class="mb-3">
+            <label for="sourceServer" class="form-label text-secondary small fw-bold">SELECT SERVER</label>
+            <select class="form-select" id="sourceServer" name="source_server_id">
+              <option value="">Select source...</option>
+              {% for s in servers %}
+              <option value="{{ s.id }}" data-base-path="{{ s.base_path }}">{{ s.name }} ({{ s.hostname }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+            <div class="input-group mb-2">
+              <label for="sourcePath" class="visually-hidden">Source Path</label>
+              <input type="text" class="form-control" id="sourcePath" name="source_path" placeholder="/path/to/source/file">
+              <button class="btn btn-dark border-secondary px-3" id="sourceUp">Up</button>
+              <button class="btn btn-primary px-3" id="sourceOpen">Open</button>
+            </div>
+            <div class="rounded border border-secondary border-opacity-25 bg-dark bg-opacity-25 overflow-auto" style="height: 200px;">
+              <table class="table table-sm x-small mb-0">
+                <tbody id="sourceRows">
+                  <tr><td class="text-center py-4 text-muted">Select server to load files</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="sourceStatus" class="x-small text-secondary mt-1">Ready</div>
+        </div>
+      </div>
+
+      <!-- Destination -->
+      <div class="col-md-6">
+        <div class="section-panel node-panel h-100 border-dashed">
+          <div class="d-flex align-items-center gap-2 mb-4">
+            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 24px; height: 24px; font-size: 12px;">2</div>
+            <h2 class="h6 mb-0 fw-bold">Destination Node</h2>
+          </div>
+
+          <div class="mb-3">
+            <label for="destinationServer" class="form-label text-secondary small fw-bold">SELECT SERVER</label>
+            <select class="form-select" id="destinationServer" name="destination_server_id">
+              <option value="">Select destination...</option>
+              {% for s in servers %}
+              <option value="{{ s.id }}" data-base-path="{{ s.base_path }}">{{ s.name }} ({{ s.hostname }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+            <div class="input-group mb-2">
+              <label for="destinationPath" class="visually-hidden">Destination Path</label>
+              <input type="text" class="form-control" id="destinationPath" name="destination_path" placeholder="/path/to/target/folder">
+              <button class="btn btn-dark border-secondary px-3" id="destUp">Up</button>
+              <button class="btn btn-primary px-3" id="destOpen">Open</button>
+            </div>
+            <div class="rounded border border-secondary border-opacity-25 bg-dark bg-opacity-25 overflow-auto" style="height: 200px;">
+              <table class="table table-sm x-small mb-0">
+                <tbody id="destRows">
+                  <tr><td class="text-center py-4 text-muted">Select server to load files</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="destStatus" class="x-small text-secondary mt-1">Ready</div>
+        </div>
+      </div>
+      <div class="node-flow-connector" aria-hidden="true">
+        <span class="flow-line"></span>
+        <span class="flow-icon">↔</span>
+      </div>
+    </div>
+
+    <!-- Operation Controls -->
+    <section class="section-panel operation-controls">
+      <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+        <div>
+          <h2 class="h6 mb-1 fw-bold">Operation Controls</h2>
+          <p class="text-secondary small mb-0">Define how FileBridge should orchestrate data between the selected nodes.</p>
+        </div>
+        <div class="operation-mode-group" role="group" aria-label="Operation mode">
+          <button type="button" class="operation-mode active" data-job-type="copy" aria-pressed="true">
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8 7a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-6a3 3 0 0 1-3-3V7Z"/><path d="M5 20a3 3 0 0 1-1-2.24V10a3 3 0 0 1 3-3"/></svg>
+            </span>
+            Copy
+          </button>
+          <button type="button" class="operation-mode" data-job-type="move" aria-pressed="false">
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/><path d="M5 5v14"/></svg>
+            </span>
+            Move
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- File Filter -->
+    <section class="section-panel mt-4 file-filter-section" id="fileFilterSection">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h6 mb-0 fw-bold">File Filter</h2>
+        <p class="text-secondary small mb-0">Selectively transfer files using wildcard patterns.</p>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="filterType" class="form-label text-secondary small fw-bold">FILTER TYPE</label>
+          <select class="form-select enterprise-select" id="filterType">
+            <option value="all">All Files</option>
+            <option value="*.txt">*.txt</option>
+            <option value="*.pdf">*.pdf</option>
+            <option value="*.docx">*.docx</option>
+            <option value="*.png;*.jpg;*.jpeg">Images (*.png, *.jpg, *.jpeg)</option>
+            <option value="*.mp4;*.mkv">Videos (*.mp4, *.mkv)</option>
+            <option value="*.mp3;*.wav">Audio (*.mp3, *.wav)</option>
+            <option value="*.zip;*.rar">Archives (*.zip, *.rar)</option>
+            <option value="custom">Custom Pattern</option>
+          </select>
+        </div>
+        <div class="col-md-6" id="customPatternContainer" style="display: none;">
+          <label for="customPattern" class="form-label text-secondary small fw-bold">CUSTOM PATTERN</label>
+          <input type="text" class="form-control" id="customPattern" placeholder="e.g. omkar* or *.txt;*.pdf">
+        </div>
+      </div>
+
+      <!-- Matched Results -->
+      <div class="mt-4 p-3 rounded border border-secondary border-opacity-25 bg-dark bg-opacity-25" id="matchResultsContainer" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h3 class="h6 mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>
+            Match Results
+          </h3>
+          <span class="badge bg-primary" id="matchCountBadge">0 files</span>
+        </div>
+        <div class="row g-2 small text-secondary mb-3">
+          <div class="col-sm-6">
+            <strong>Total Matched:</strong> <span id="matchCountText">0</span>
+          </div>
+          <div class="col-sm-6">
+            <strong>Estimated Size:</strong> <span id="matchSizeText">0 B</span>
+          </div>
+        </div>
+        <div class="rounded overflow-auto" style="max-height: 150px; background: rgba(0,0,0,0.2);">
+          <table class="table table-sm x-small mb-0 table-borderless table-hover">
+            <tbody id="matchPreviewRows">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="d-flex gap-3 justify-content-end mt-4">
+        <button class="btn btn-dark border-secondary px-4 fw-bold" id="previewFilterBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 mb-1" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>
+          Preview
+        </button>
+        {% if user_has_role(user, 'Super Admin', 'Admin') %}
+        <button class="btn btn-primary px-5 fw-bold shadow-lg" id="submitTransfer">
+          START TRANSFER
+        </button>
+        {% else %}
+        <button class="btn btn-primary px-5 fw-bold shadow-lg" id="submitTransfer" disabled title="Start Transfer requires write privileges">
+          START TRANSFER
+        </button>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- Execution Panel -->
+    <div class="section-panel mt-4">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h6 mb-0 fw-bold">Transfer Options</h2>
+      </div>
+      <div class="row g-3">
+        <div class="col-lg-4">
+          <label for="conflictHandling" class="form-label text-secondary small fw-bold">CONFLICT HANDLING</label>
+          <select class="form-select enterprise-select" id="conflictHandling">
+            <option value="overwrite" selected>Overwrite Existing</option>
+            <option value="skip">Skip Existing</option>
+            <option value="rename">Rename Duplicate</option>
+            <option value="latest">Keep Latest Version</option>
+          </select>
+        </div>
+        <div class="col-lg-8">
+          <div class="advanced-toggle-grid">
+            <div class="form-check form-switch enterprise-switch">
+              <input class="form-check-input" type="checkbox" id="destinationIsDir">
+              <label class="form-check-label text-secondary small fw-bold" for="destinationIsDir">FOLDER SYNC</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-time Progress Status -->
+      <div id="transferProgressContainer" class="mt-4 d-none">
+        <div class="operation-status-card">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
+            <div>
+              <span id="transferStatusLabel" class="operation-state">INITIATING...</span>
+              <div id="transferStatusMessage" class="x-small text-secondary mt-1">Preparing secure tunnel...</div>
+            </div>
+            <span id="transferProgressPercent" class="text-primary small fw-bold">0%</span>
+          </div>
+          <div class="progress operation-progress">
+            <div id="transferProgressBar" class="progress-bar bg-primary progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+          </div>
+          <div class="operation-metrics mt-3">
+            <span><strong id="operationFileCount">0 B / 0 B</strong> data transferred</span>
+            <span><strong id="operationSpeed">-- MB/s</strong></span>
+            <span><strong id="operationEta">ETA: --:--</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transfer Queue -->
+  <div class="col-lg-4">
+    <section class="section-panel p-0 overflow-hidden h-100">
+      <div class="p-3 border-bottom border-secondary border-opacity-25 bg-dark bg-opacity-25 d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0 fw-bold">Active Queue</h2>
+        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" id="queueCount">{{ active_jobs|length if active_jobs else 0 }}</span>
+      </div>
+      <div class="p-3 overflow-auto" style="max-height: 600px;">
+        <table class="table table-sm align-middle x-small queue-table">
+          <thead>
+            <tr>
+              <th>Operation Type</th>
+              <th>Source</th>
+              <th>Destination</th>
+              <th>Progress</th>
+              <th>Speed</th>
+              <th>Status</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="transferJobs">
+            <tr id="emptyQueue" {% if active_jobs %}style="display: none;"{% endif %}>
+              <td colspan="7" class="text-center py-5 text-secondary opacity-50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-clock-history mb-3" viewBox="0 0 16 16">
+                  <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.24l.56-.829c.193.13.383.27.567.42l-.688.74a6.02 6.02 0 0 0-.44-.241"/>
+                </svg>
+                <p class="small">Transfer queue is empty.</p>
+              </td>
+            </tr>
+            {% for job in active_jobs %}
+            <tr data-job="{{ job.job_uuid }}">
+              <td><span class="operation-chip">{{ job.job_type }}</span></td>
+              <td class="truncate queue-path" data-queue-source title="{{ job.display_source_path }}">
+                {{ job.display_source_path.replace('\\', '/').split('/')[-2:] | join('/') if job.display_source_path else '-' }}
+              </td>
+              <td class="truncate queue-path" data-queue-destination title="{{ job.display_destination_path }}">
+                {{ job.display_destination_path.replace('\\', '/').split('/')[-2:] | join('/') if job.display_destination_path else '-' }}
+              </td>
+              <td>
+                <div class="queue-progress-wrap">
+                  {% set progress = 100 if job.status == 'success' else ((job.transferred_bytes / job.total_bytes * 100)|round|int if job.total_bytes else 0) %}
+                  <div class="progress"><div class="progress-bar" style="width:{{ progress }}%"></div></div>
+                  <span class="progress-text">{{ progress }}%</span>
+                </div>
+              </td>
+              <td data-queue-speed>-- MB/s</td>
+              <td>
+                {% if job.status == 'running' and job.job_type == 'sync' %}
+                  <span class="badge status-syncing" data-queue-status>Syncing</span>
+                {% else %}
+                  <span class="badge status-{{ job.status }}" data-queue-status>{{ job.status|capitalize }}</span>
+                {% endif %}
+              </td>
+              <td class="text-secondary local-time" data-utc="{{ job.created_at.isoformat() ~ 'Z' if job.created_at else '' }}" data-format="time">
+                {{ job.created_at.strftime('%I:%M:%S %p') if job.created_at else "" }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+  .border-dashed { border-style: dashed !important; }
+  .x-small { font-size: 11px; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transfer.js') }}"></script>
+{% endblock %}

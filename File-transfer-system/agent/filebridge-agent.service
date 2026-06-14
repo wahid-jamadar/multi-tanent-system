@@ -1,0 +1,13 @@
+[Unit]
+Description=FileBridge Agent Runtime
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/root/filebridge-agent/filebridge-agent daemon
+Restart=always
+RestartSec=10
+Environment="FILEBRIDGE_AGENT_STATE_DIR=/root/filebridge-agent"
+
+[Install]
+WantedBy=multi-user.target

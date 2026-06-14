@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Operations Dashboard - FileBridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="/static/css/app.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container-fluid ps-0">
+      <a class="navbar-brand d-flex align-items-center p-0" href="/dashboard">
+        <img src="/static/img/logo.png" alt="FileBridge Logo" class="navbar-logo m-0" style="margin-right: -30px !important;"><span class="brand-text">FileBridge</span>
+      </a>
+      
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav mx-auto gap-1">
+          <!-- Overview -->
+          <li class="nav-item">
+            <a class="nav-link active" href="/dashboard">Dashboard</a>
+          </li>
+          
+          <!-- Infrastructure -->
+          
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Infrastructure</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/servers">Servers</a></li>
+              <li><a class="dropdown-item" href="/agents">Agents</a></li>
+              <li><a class="dropdown-item" href="/files">File Explorer</a></li>
+            </ul>
+          </li>
+          
+
+          <!-- Operations -->
+          
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Operations</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/transfer">File Transfer</a></li>
+              <li><a class="dropdown-item" href="/synchronization">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-repeat me-2" viewBox="0 0 16 16">
+                  <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-1.158 6.308c-.155.057-.32.081-.488.082H7.333a.994.994 0 0 1-.59-.204L3.644 10.8a.994.994 0 0 1-.33-.674l-.157-2.113a.25.25 0 0 1 .498-.037l.157 2.113c.012.155.08.3.192.41l3.099 2.384c.057.043.125.066.195.066h2.555c.105 0 .208-.022.304-.065l2.457-1.106a.25.25 0 1 1 .206.455l-2.457 1.106zM6.772 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L7.182 4.658a.25.25 0 0 1-.41-.192zM4.466 9h-3.932a.25.25 0 0 1-.192-.41l1.966-2.36a.25.25 0 0 1 .384 0l1.966 2.36a.25.25 0 0 1-.192.41zm1.158-6.308c.155-.057.32-.081.488-.082H8.667c.217 0 .428.07.6.204L12.356 5.2c.112.086.18.22.192.362l.157 2.113a.25.25 0 0 1-.498.037l-.157-2.113a.25.25 0 0 0-.192-.41l-3.099-2.384A.25.25 0 0 0 8.667 3H6.112a.25.25 0 0 0-.24.167L3.415 4.273a.25.25 0 0 1-.206-.455l2.457-1.106c.155-.057.32-.081.488-.082z"/>
+                </svg>
+                Synchronization
+              </a></li>
+              <li><a class="dropdown-item" href="/alerts">Alerts</a></li>
+            </ul>
+          </li>
+          
+
+          <!-- Administration -->
+          
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle " href="#" role="button" data-bs-toggle="dropdown">Administration</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/users">Users</a></li>
+              
+              <li><a class="dropdown-item" href="/organizations">Organizations</a></li>
+              <li><a class="dropdown-item" href="/settings">Settings</a></li>
+              
+            </ul>
+          </li>
+          
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle " href="#" role="button" data-bs-toggle="dropdown">Logs</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/logs/system">System Log</a></li>
+              <li><a class="dropdown-item" href="/logs/admin">Super Admin Log</a></li>
+            </ul>
+          </li>
+          
+          
+        </ul>
+
+        <div class="d-flex align-items-center gap-3">
+          
+          <form class="d-flex align-items-center m-0 p-0" method="GET" action="">
+            <select class="form-select form-select-sm bg-dark border-secondary text-white fw-medium shadow-sm" name="org_id" onchange="this.form.submit()" style="width: 175px;">
+              <option value="all" selected>All Organizations</option>
+              
+              <option value="7bb91de9-bce1-4546-9420-4b67952560ae" >Bailhongal Urban Co-op Bank Ltd</option>
+              
+              <option value="784b712f-a536-4f54-a79f-78f2b8d13698" >Baliraja Bank</option>
+              
+              <option value="26d5ea9b-34bf-432c-80cf-560d619d7ebd" >Global Organization</option>
+              
+              <option value="4ca47748-5f59-42f6-9ee1-a3be80c992b4" >Kolhapur Urban Bank, Kolhapur.</option>
+              
+              <option value="dbee1af9-230b-41fd-a5d6-9b752128d843" >Kumbhi Bank</option>
+              
+              <option value="559ed3cc-13c4-45d7-b08b-c5602c85d0bd" >LIST Software Pvt Ltd</option>
+              
+              <option value="3f82ed2b-cd18-4e0d-a534-9ad795ba68a8" >Manmandir Bank</option>
+              
+              <option value="3e3b8c42-5ab7-48eb-b3c3-fec660d8e341" >Pune Merchant Co-operative Bank, Pune.</option>
+              
+              <option value="08665f0c-59fe-4e1d-a393-de02c27555b7" >Sangli Urban Bank, Sangli.</option>
+              
+            </select>
+          </form>
+          
+          
+          <button class="btn btn-sm btn-dark d-flex align-items-center gap-2" id="globalRefreshBtn" title="Refresh Page">
+            <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-clockwise flex-shrink-0" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+              <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+            </svg>
+            <span id="refreshText" class="d-none d-md-inline-block text-start" style="width: 60px;">Refresh</span>
+          </button>
+
+          <div class="dropdown">
+            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none dropdown-toggle px-2 py-1 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s;" data-bs-toggle="dropdown" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+              <div class="position-relative">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 32px; height: 32px; font-size: 13px; background: linear-gradient(135deg, var(--fb-primary), var(--fb-indigo));">
+                  A
+                </div>
+                <span class="position-absolute bottom-0 end-0 rounded-circle border border-dark" style="width: 10px; height: 10px; background-color: var(--fb-success); margin-bottom: -2px; margin-right: -2px;"></span>
+              </div>
+              <div class="d-none d-md-flex flex-column lh-1 pe-1">
+                <span class="text-white fw-semibold small" style="font-size: 13px;">admin</span>
+                <span class="text-secondary" style="font-size: 11px;">Super Admin</span>
+              </div>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end mt-2">
+              <li><a class="dropdown-item d-flex align-items-center gap-2" href="/settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664z"/></svg>
+                Profile Settings
+              </a></li>
+              <li><button class="dropdown-item d-flex align-items-center gap-2" id="themeToggle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/></svg>
+                Toggle Theme
+              </button></li>
+              <li><hr class="dropdown-divider border-secondary opacity-25"></li>
+              <li><a class="dropdown-item text-danger d-flex align-items-center gap-2" href="/logout">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+                Sign Out
+              </a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-fluid py-4 px-md-4">
+    
+      
+    
+    
+    
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-10">
+  <div class="d-flex align-items-center gap-3">
+    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="var(--fb-primary)" viewBox="0 0 16 16">
+        <path d="M8 0a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 12.293V.5A.5.5 0 0 1 8 0z"/>
+        <path d="M1 14a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 14z"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="h3 fw-bold mb-0 text-white">Operations Dashboard</h1>
+      <p class="text-secondary mb-0 small">Live infrastructure status and operations overview.</p>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-primary d-flex align-items-center gap-2 px-3" href="/transfer">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+      </svg>
+      New Transfer
+    </a>
+  </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="row g-3 mb-4">
+  <div class="col">
+    <a href="/servers" class="text-decoration-none">
+      <div class="metric" style="cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+        <span>Connected Servers</span>
+        <strong>1</strong>
+        <div class="position-absolute top-0 end-0 p-3 opacity-25">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zM1 3.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9z"/><path d="M2 5.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5z"/></svg>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="/agents" class="text-decoration-none">
+      <div class="metric" style="border-bottom: 2px solid var(--fb-success); cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(16, 185, 129, 0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+        <span class="text-success d-flex align-items-center"><span class="live-indicator"></span> Active Agents</span>
+        <strong id="onlineAgents">1</strong>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="/queue-operations" class="text-decoration-none">
+      <div class="metric" style="border-bottom: 2px solid var(--fb-info); cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(13, 202, 240, 0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+        <span class="text-info">Queue Operations</span>
+        <strong>0</strong>
+      </div>
+    </a>
+  </div>
+
+  <div class="col">
+    <a href="/alerts" class="text-decoration-none">
+      <div class="metric" style="border-bottom: 2px solid var(--fb-danger); cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+        <span class="text-danger">System Health</span>
+        <strong class="text-danger">31 Alerts</strong>
+      </div>
+    </a>
+  </div>
+</div>
+<div class="row g-4 mb-4">
+  <div class="col-12">
+  <!-- Recent Jobs -->
+    <section class="section-panel p-0 overflow-hidden h-100">
+      <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center" style="background: rgba(15, 23, 42, 0.4);">
+        <h2 class="h6 mb-0 fw-bold d-flex align-items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="var(--fb-primary)" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+          Recent Job Activity
+        </h2>
+        <a href="/job-history" class="btn btn-sm btn-dark px-3 py-1 text-decoration-none small fw-medium">View All →</a>
+      </div>
+      <div class="table-responsive" style="max-height: 400px;">
+        <table class="table align-middle m-0">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Destination</th>
+              <th>Job ID</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Started</th>
+              <th class="text-end">Completed</th>
+            </tr>
+          </thead>
+          <tbody id="jobsTable">
+            
+            
+            <tr>
+              <td colspan="8" class="text-center py-5 text-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="opacity-25 mb-3" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg>
+                <div class="fw-medium">No recent activity detected</div>
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+  .x-small { font-size: 11px; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+
+  </main>
+
+  <!-- Session Modal -->
+  <div class="modal fade" id="sessionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass-panel border-secondary shadow-lg">
+        <div class="modal-header border-secondary border-opacity-25">
+          <h5 class="modal-title fw-bold">Session Expiring</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-secondary">Your secure session will expire soon due to inactivity.</div>
+        <div class="modal-footer border-secondary border-opacity-25">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Stay Signed In</button>
+          <a class="btn btn-dark" href="/logout">Sign Out</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    window.FileBridgeConfig = {
+      sessionWarningMs: 25 * 60 * 1000,
+      sessionTimeoutMs: 30 * 60 * 1000,
+      userRoles: ["Super Admin"]
+    };
+  </script>
+  <script src="/static/js/app.js"></script>
+
+  <!-- Floating Navigation Widget -->
+  <div id="quick-nav-widget" class="quick-nav-container">
+    <!-- Expanded Menu -->
+    <div id="quick-nav-menu" class="quick-nav-menu-panel">
+      <div class="quick-nav-menu-header">
+        <svg viewBox="0 0 24 24" class="quick-nav-header-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span>System Navigation</span>
+      </div>
+      <div class="quick-nav-menu-divider"></div>
+      <div class="quick-nav-menu-body">
+        <a id="quick-nav-primary-btn" href="#" class="quick-nav-btn quick-nav-btn-primary">
+          <span>Go to Other System</span>
+          <svg viewBox="0 0 24 24" class="quick-nav-btn-icon" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+        <a id="quick-nav-secondary-btn" href="#" class="quick-nav-btn quick-nav-btn-secondary">
+          <span>Go to Select Page (<code>/select</code>)</span>
+          <svg viewBox="0 0 24 24" class="quick-nav-btn-icon" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+    </div>
+    
+    <!-- Bubble Toggle Button -->
+    <button id="quick-nav-toggle" class="quick-nav-bubble-btn" aria-label="Toggle navigation menu">
+      <svg viewBox="0 0 24 24" class="quick-nav-bubble-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+      </svg>
+    </button>
+  </div>
+
+  <style>
+    /* Premium Floating Navigation Widget CSS */
+    .quick-nav-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 2147483647;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      pointer-events: none;
+    }
+
+    .quick-nav-bubble-btn,
+    .quick-nav-menu-panel {
+      pointer-events: auto;
+    }
+
+    .quick-nav-bubble-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: var(--widget-gradient, linear-gradient(135deg, #3B82F6, #8B5CF6));
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+      outline: none;
+    }
+
+    .quick-nav-bubble-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 12px 35px var(--widget-glow, rgba(99, 102, 241, 0.4)), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .quick-nav-bubble-btn:active {
+      transform: scale(0.95);
+    }
+
+    .quick-nav-bubble-icon {
+      width: 26px;
+      height: 26px;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .quick-nav-container.active .quick-nav-bubble-icon {
+      transform: rotate(135deg);
+    }
+
+    .quick-nav-container.active .quick-nav-bubble-btn {
+      background: #EF4444;
+      box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+    }
+
+    .quick-nav-menu-panel {
+      width: 290px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.85);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+      margin-bottom: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transform-origin: bottom right;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(12px) scale(0.95);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .quick-nav-container.active .quick-nav-menu-panel {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .quick-nav-menu-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .quick-nav-header-icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    .quick-nav-menu-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 0 -16px;
+    }
+
+    .quick-nav-menu-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quick-nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .quick-nav-btn-primary {
+      background: var(--widget-btn-gradient, linear-gradient(135deg, #10B981, #06B6D4));
+      color: #ffffff;
+      box-shadow: 0 4px 15px var(--widget-btn-shadow, rgba(16, 185, 129, 0.2));
+    }
+
+    .quick-nav-btn-primary:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px var(--widget-btn-shadow, rgba(16, 185, 129, 0.3));
+    }
+
+    .quick-nav-btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: #E5E7EB;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .quick-nav-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .quick-nav-btn:active {
+      transform: scale(0.98);
+    }
+
+    .quick-nav-btn-icon {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.2s ease;
+    }
+
+    .quick-nav-btn:hover .quick-nav-btn-icon {
+      transform: translateX(3px);
+    }
+
+    @media (max-width: 600px) {
+      .quick-nav-container {
+        bottom: 16px;
+        right: 16px;
+      }
+      .quick-nav-menu-panel {
+        width: calc(100vw - 32px);
+        max-width: 280px;
+      }
+    }
+  </style>
+
+  <script>
+    (function() {
+      const scheme = window.location.protocol;
+      const hostname = window.location.hostname;
+      
+      const selectUrl = scheme + "//" + hostname + ":8000/select";
+      const batchhostUrl = scheme + "//" + hostname + ":5000/";
+      const filebridgeUrl = scheme + "//" + hostname + ":5001/";
+      
+      const currentPort = window.location.port;
+      const isBatchHost = (currentPort === "5000");
+      const isFileBridge = (currentPort === "5001");
+      
+      if (!isBatchHost && !isFileBridge) return;
+      
+      const container = document.getElementById("quick-nav-widget");
+      const toggleBtn = document.getElementById("quick-nav-toggle");
+      const primaryBtn = document.getElementById("quick-nav-primary-btn");
+      const secondaryBtn = document.getElementById("quick-nav-secondary-btn");
+      
+      if (isBatchHost) {
+        container.style.setProperty("--widget-gradient", "linear-gradient(135deg, #3B82F6, #8B5CF6)");
+        container.style.setProperty("--widget-glow", "rgba(139, 92, 246, 0.4)");
+        container.style.setProperty("--widget-btn-gradient", "linear-gradient(135deg, #10B981, #06B6D4)");
+        container.style.setProperty("--widget-btn-shadow", "rgba(16, 185, 129, 0.2)");
+        
+        primaryBtn.href = filebridgeUrl;
+        primaryBtn.querySelector("span").textContent = "Go to FileBridge System";
+      } else if (isFileBridge) {
+        container.style.setProperty("--widget-gradient", "linear-gradient(135deg, #10B981, #06B6D4)");
+        container.style.setProperty("--widget-glow", "rgba(6, 182, 212, 0.4)");
+        container.style.setProperty("--widget-btn-gradient", "linear-gradient(135deg, #3B82F6, #8B5CF6)");
+        container.style.setProperty("--widget-btn-shadow", "rgba(59, 130, 246, 0.2)");
+        
+        primaryBtn.href = batchhostUrl;
+        primaryBtn.querySelector("span").textContent = "Go to BatchHost-Pro System";
+      }
+      
+      secondaryBtn.href = selectUrl;
+      
+      toggleBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        container.classList.toggle("active");
+      });
+      
+      document.addEventListener("click", function(e) {
+        if (container.classList.contains("active") && !container.contains(e.target)) {
+          container.classList.remove("active");
+        }
+      });
+      
+      document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape" && container.classList.contains("active")) {
+          container.classList.remove("active");
+        }
+      });
+    })();
+  </script>
+  
+</body>
+</html>

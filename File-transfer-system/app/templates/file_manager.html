@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}File Explorer - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-10">
+  <div class="d-flex align-items-center gap-3">
+    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="var(--fb-success)" viewBox="0 0 16 16">
+        <path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4H2.19zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707z"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="h3 fw-bold mb-0 text-white">Infrastructure File Explorer</h1>
+      <p class="text-secondary mb-0 small">Browse, manage, and synchronize files across your managed infrastructure.</p>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <div class="mb-3">
+      <label for="fileServer" class="form-label text-secondary small fw-bold">SELECT TARGET SERVER</label>
+      <select class="form-select border-primary" style="background: rgba(59, 130, 246, 0.05); color: #fff;" id="fileServer" name="server_id">
+        <option value="">Select server...</option>
+        {% for server in servers %}
+        <option value="{{ server.id }}" data-base-path="{{ server.base_path }}">{{ server.name }} ({{ server.hostname }})</option>
+        {% endfor %}
+      </select>
+      <div id="fileStatus" class="x-small text-secondary mt-1">Ready</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Explorer Pane -->
+  <div class="col-12">
+    <div class="section-panel p-0 overflow-hidden min-vh-50 d-flex flex-column h-100">
+      <!-- Toolbar -->
+      <div class="p-3 border-bottom border-secondary border-opacity-25" style="background: rgba(15, 23, 42, 0.5);">
+        <div class="row align-items-center g-3">
+          <div class="col-md-7">
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-dark px-3 py-2 border-0" style="background: rgba(255,255,255,0.05);" id="goUp" title="Go Up One Level">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
+              </button>
+              <div class="input-group flex-grow-1" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; transition: all 0.2s;">
+                <span class="input-group-text bg-transparent border-0 text-secondary pe-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                </span>
+                <label for="currentPath" class="visually-hidden">Current Path</label>
+                <input type="text" class="form-control bg-transparent border-0 text-white shadow-none font-monospace" style="font-size: 13px;" id="currentPath" name="path" placeholder="/path/to/dir">
+                <button class="btn btn-primary px-3 rounded-0 m-0" id="openPath">Go</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-5 text-md-end d-flex gap-2 justify-content-md-end">
+            <button class="btn btn-sm btn-dark px-3 d-flex align-items-center gap-2" id="refreshFiles">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/></svg>
+              Refresh
+            </button>
+            <button class="btn btn-sm btn-dark px-3 d-flex align-items-center gap-2" id="newFolder">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4H2.19zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707z"/><path d="M8 6.5a.5.5 0 0 1 .5.5v1.5H10a.5.5 0 0 1 0 1H8.5V11a.5.5 0 0 1-1 0V9.5H6a.5.5 0 0 1 0-1h1.5V7a.5.5 0 0 1 .5-.5z"/></svg>
+              New Folder
+            </button>
+            <button class="btn btn-sm btn-primary px-3 d-flex align-items-center gap-2" id="fmUpload">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+              Upload
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Table -->
+      <div class="table-responsive flex-grow-1" style="min-height: 400px; background: rgba(3, 7, 18, 0.4);">
+        <table class="table align-middle m-0">
+          <thead>
+            <tr>
+              <th style="width: 40px; padding-left: 24px;"></th>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Modified</th>
+              <th class="text-end pe-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="fileRows">
+            <tr>
+              <td colspan="5" class="text-center py-5 text-secondary">
+                <div class="d-flex flex-column align-items-center justify-content-center py-5">
+                  <div class="position-relative mb-4">
+                    <div class="position-absolute top-50 start-50 translate-middle" style="width: 120px; height: 120px; background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%); border-radius: 50%; filter: blur(10px); animation: pulse 3s infinite;"></div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="var(--fb-primary)" style="opacity: 0.9; position: relative; z-index: 2; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));" viewBox="0 0 16 16">
+                      <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/>
+                    </svg>
+                  </div>
+                  <h3 class="h5 fw-bold text-white">Select Target Server</h3>
+                  <p class="text-secondary mb-4 max-w-md">Connect to an agent to start browsing, uploading, and managing your infrastructure files securely.</p>
+                  <button class="btn btn-primary" onclick="document.getElementById('fileServer').focus();">Select Server</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Overlay Placeholder -->
+<div id="fmUploadZone" class="drop-zone d-none position-fixed top-0 start-0 w-100 h-100" style="z-index: 9999; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
+  <div class="h-100 d-flex flex-column align-items-center justify-content-center">
+    <div class="rounded-circle p-4 mb-4" style="background: rgba(59, 130, 246, 0.1); border: 2px dashed rgba(59, 130, 246, 0.5);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="var(--fb-primary)" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+    </div>
+    <div class="h2 fw-bold text-white mb-2">Drop files to upload</div>
+    <div class="text-secondary h5 fw-normal">Release to start transfer to agent</div>
+  </div>
+</div>
+
+<style>
+  .min-vh-50 { min-height: 50vh; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fm-icon { width: 24px; height: 24px; color: var(--fb-muted); }
+  tr.fm-row { transition: all 0.2s ease; cursor: pointer; }
+  tr.fm-row:hover { background: rgba(255, 255, 255, 0.05) !important; }
+  tr.fm-row td { vertical-align: middle; padding: 12px 20px; }
+  .input-group:focus-within { border-color: var(--fb-primary) !important; box-shadow: 0 0 0 4px var(--fb-primary-glow); }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/file_manager.js') }}"></script>
+{% endblock %}

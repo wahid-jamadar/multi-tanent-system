@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% set active_page = "logs" %}
+{% block title %}System Logs{% endblock %}
+{% block page_title %}System Logs{% endblock %}
+
+{% block extra_head %}
+<style>
+.logs-toolbar {  display: flex; align-items: center;  gap: 8px; flex-wrap: wrap;}
+
+.download-menu {  position: relative;}
+.download-menu-panel {  display: none;  position: absolute;  top: calc(100% + 8px);  right: 0;  width: 280px;  padding: 12px;  background: var(--bg2);  border: 1px solid var(--border);  border-radius: var(--radius);  box-shadow: var(--card-shadow);  z-index: 20;}
+.download-menu.open .download-menu-panel {  display: block;}
+.download-field {  display: flex;  flex-direction: column;  gap: 4px;  margin-bottom: 10px;}
+.download-field input,
+.download-field select {  width: 100%;}
+.download-actions { display: flex;  justify-content: flex-end;  gap: 8px;  padding-top: 2px;}
+.download-error {min-height: 16px; margin-bottom: 8px; color: var(--red); font-size: 11.5px;}
+
+@media (max-width: 720px) {
+  .card-header { align-items: flex-start; flex-direction: column;}
+  .logs-toolbar,
+  .logs-toolbar select,
+  .logs-toolbar button,
+  .download-menu { width: 100%;}
+  .download-menu-panel { left: 0; right: auto; width: 100%;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="display:flex; flex-direction:column; height:calc(100vh - 120px);">
+
+<div class="card-header" style="flex-shrink:0;">
+<div class="card-title">Live System & Agent Logs</div>
+
+<div class="input-group logs-toolbar" style="width:auto;">
+
+<select id="agentFilter" style="width:180px;">
+  <option value="">All Agents</option>
+  {% if user and user.role == 'super_admin' %}
+  <option value="SYSTEM_ONLY">System Only</option>
+  {% endif %}
+</select>
+
+{% if user and user.role == 'super_admin' %}
+<select id="orgFilter" style="width:180px;">
+  <option value="">All Organizations</option>
+</select>
+{% endif %}
+
+<select id="scriptFilter" style="width:180px;">
+  <option value="">All Scripts</option>
+</select>
+
+<button class="btn btn-secondary" onclick="loadLogs()">Apply</button>
+<button class="btn btn-primary" onclick="loadLogs()">Refresh</button>
+
+<div class="download-menu" id="downloadMenu">
+  <button class="btn btn-secondary" type="button" id="downloadMenuBtn" onclick="toggleDownloadMenu(event)">
+    Download Logs
+  </button>
+  <div class="download-menu-panel" aria-labelledby="downloadMenuBtn">
+    <div class="download-field">
+      <label for="exportFormat">File Type</label>
+      <select id="exportFormat">
+        <option value="pdf">PDF</option>
+        <option value="xml">XML</option>
+      </select>
+    </div>
+
+    <div class="download-field">
+      <label for="rangeType">Time Duration</label>
+      <select id="rangeType" onchange="toggleFilters()">
+        <option value="all">All Logs</option>
+        <option value="hours">Last X Hours</option>
+        <option value="custom">Custom Range</option>
+      </select>
+    </div>
+
+    <div class="download-field" id="hoursField" style="display:none;">
+      <label for="hoursBox">Hours</label>
+      <input type="number" id="hoursBox" value="24" min="1" max="24" />
+    </div>
+
+    <div class="download-field" id="fromDateField" style="display:none;">
+      <label for="fromDate">From</label>
+      <input type="date" id="fromDate">
+    </div>
+
+    <div class="download-field" id="toDateField" style="display:none;">
+      <label for="toDate">To</label>
+      <input type="date" id="toDate">
+    </div>
+
+    <div class="download-error" id="downloadError"></div>
+
+    <div class="download-actions">
+      <button class="btn btn-secondary" type="button" onclick="closeDownloadMenu()">Cancel</button>
+      <button class="btn btn-primary" type="button" onclick="exportLogs()">Download</button>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<div class="log-content" id="logsContainer"
+style="flex:1; overflow-y:auto; border-radius:8px; border:1px solid var(--border); padding: 12px; box-sizing: border-box; background: #000; font-family: monospace; font-size: 13px; line-height: 1.4;">
+Loading logs...
+</div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function initFilters() {
+ const promises = [
+   fetch('/api/agents'),
+   fetch('/api/scripts')
+ ];
+ const orgFilter = document.getElementById('orgFilter');
+ if (orgFilter) {
+   promises.push(fetch('/api/organizations'));
+ }
+
+ const results = await Promise.all(promises);
+ const agents = await results[0].json();
+ const scripts = await results[1].json();
+
+ const a = document.getElementById('agentFilter');
+ agents.forEach(x=>{
+   const o=document.createElement('option');
+   o.value=x.id;
+   o.textContent=x.hostname;
+   a.appendChild(o);
+ });
+
+ const s=document.getElementById('scriptFilter');
+ [...new Set(scripts.map(x=>x.path))].forEach(p=>{
+   const o=document.createElement('option');
+   o.value=p;
+   o.textContent=p.split(/[\\/]/).pop();
+   s.appendChild(o);
+ });
+
+ if (orgFilter && results[2]) {
+   const orgs = await results[2].json();
+   orgs.forEach(o => {
+     const opt = document.createElement('option');
+     opt.value = o.id;
+     opt.textContent = o.name;
+     orgFilter.appendChild(opt);
+   });
+ }
+}
+
+function toggleFilters(){
+ const t=document.getElementById('rangeType').value;
+
+ document.getElementById('hoursField').style.display =
+   t==='hours' ? 'flex':'none';
+
+ document.getElementById('fromDateField').style.display =
+   t==='custom' ? 'flex':'none';
+
+ document.getElementById('toDateField').style.display =
+   t==='custom' ? 'flex':'none';
+
+ document.getElementById('downloadError').textContent = '';
+}
+
+function toggleDownloadMenu(event){
+ event.stopPropagation();
+ document.getElementById('downloadMenu').classList.toggle('open');
+}
+
+function closeDownloadMenu(){
+ document.getElementById('downloadMenu').classList.remove('open');
+ document.getElementById('downloadError').textContent = '';
+}
+
+let autoScroll = true;
+
+async function loadLogs(){
+ const c=document.getElementById('logsContainer');
+ if (!c.dataset.scrollListener) {
+   c.addEventListener('scroll', () => {
+     autoScroll = Math.abs(c.scrollHeight - c.scrollTop - c.clientHeight) <= 5;
+   });
+   c.dataset.scrollListener = 'true';
+ }
+
+ try{
+   const params = new URLSearchParams();
+   
+   const agentFilter = document.getElementById('agentFilter').value;
+   if (agentFilter === 'SYSTEM_ONLY') {
+     params.append('system_only', 'true');
+   } else if (agentFilter) {
+     params.append('agent_id', agentFilter);
+   }
+
+   const scriptFilter = document.getElementById('scriptFilter').value;
+   if (scriptFilter) {
+     params.append('script_path', scriptFilter);
+   }
+
+   const orgFilter = document.getElementById('orgFilter');
+   if (orgFilter && orgFilter.value) {
+     params.append('organization_id', orgFilter.value);
+   }
+
+   const r=await fetch('/api/system_logs?' + params.toString());
+   const d=await r.json();
+
+   c.textContent=d.logs.length ? d.logs.join('\n') : 'No logs found.';
+   if (autoScroll) {
+     c.scrollTop=c.scrollHeight;
+   }
+
+ }catch(e){
+   c.textContent='Failed loading logs.';
+ }
+}
+
+function exportLogs(){
+ let q=new URLSearchParams();
+ const error=document.getElementById('downloadError');
+ error.textContent='';
+
+ q.append("format", document.getElementById('exportFormat').value);
+
+ const type=document.getElementById('rangeType').value;
+ q.append("range", type);
+
+ if(type==="hours"){
+   const hours=parseInt(document.getElementById('hoursBox').value,10);
+   if(Number.isNaN(hours) || hours < 1 || hours > 24){
+     error.textContent='Enter a value from 1 to 24 hours.';
+     return;
+   }
+   q.append("hours", hours);
+ }
+
+ if(type==="custom"){
+   const fromDate=document.getElementById('fromDate').value;
+   const toDate=document.getElementById('toDate').value;
+   if(!fromDate || !toDate){
+     error.textContent='Select both custom range dates.';
+     return;
+   }
+   if(fromDate > toDate){
+     error.textContent='From date must be before To date.';
+     return;
+   }
+   q.append("from", fromDate);
+   q.append("to", toDate);
+ }
+
+ window.location='/api/logs/export?'+q.toString();
+ closeDownloadMenu();
+}
+
+document.addEventListener('click', function(e){
+ if(!e.target.closest('#downloadMenu')){
+   closeDownloadMenu();
+ }
+});
+
+initFilters().then(loadLogs);
+setInterval(loadLogs,10000);
+</script>
+{% endblock %}

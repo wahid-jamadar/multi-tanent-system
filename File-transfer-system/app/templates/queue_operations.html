@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Queue Operations - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-10">
+  <div class="d-flex align-items-center gap-3">
+    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.2);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="var(--fb-info)" viewBox="0 0 16 16">
+        <path d="M4 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-2zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-2zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-2z"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="h3 fw-bold mb-0 text-white">Queue Operations</h1>
+      <p class="text-secondary mb-0 small">View operations waiting in the queue.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section-panel p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table align-middle m-0">
+      <thead>
+        <tr>
+          <th>Agent/Server</th>
+          <th>Operation</th>
+          <th>Source Path</th>
+          <th>Destination Path</th>
+          <th>Status</th>
+          <th class="text-end">Created At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for op in operations %}
+        <tr>
+          <td>
+            <div class="d-flex flex-column">
+              <span class="text-white fw-semibold small">
+                <i class="bi bi-server text-primary me-1 small"></i>{{ op.display_source_server.name if op.display_source_server else 'Local' }}
+              </span>
+            </div>
+          </td>
+          <td>
+            <span class="badge" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--fb-muted);">
+              {% if op.job_type == 'sync' %}
+                synchronization
+              {% elif op.job_type == 'copy' %}
+                copy-paste
+              {% elif op.job_type == 'move' %}
+                cut-paste
+              {% else %}
+                {{ op.job_type }}
+              {% endif %}
+            </span>
+          </td>
+          <td>
+            <span class="text-secondary font-monospace small truncate" style="max-width: 250px;" title="{{ op.display_source_path }}">
+              {{ op.display_source_path }}
+            </span>
+          </td>
+          <td>
+            <span class="text-secondary font-monospace small truncate" style="max-width: 250px;" title="{{ op.display_destination_path or '-' }}">
+              {{ op.display_destination_path or '-' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge status-badge status-{{ op.status }}">{{ op.status|capitalize }}</span>
+          </td>
+          <td class="text-end text-secondary small font-monospace local-time" data-utc="{{ op.created_at.isoformat() ~ 'Z' if op.created_at else '' }}">
+            {{ op.created_at.strftime('%Y-%m-%d %H:%M:%S') if op.created_at else "" }}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not operations %}
+        <tr>
+          <td colspan="6" class="text-center py-5 text-secondary">
+            <div class="fw-medium">No queue operations found</div>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .x-small { font-size: 11px; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: bottom; }
+</style>
+{% endblock %}

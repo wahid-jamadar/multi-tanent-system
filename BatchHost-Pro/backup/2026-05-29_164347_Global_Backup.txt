@@ -1,0 +1,1470 @@
+--- backup_scope.txt ---
+global system backup
+
+--- organizations.txt ---
+[
+  {
+    "id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "name": "Global Organization",
+    "status": "active",
+    "is_default": true,
+    "created_at": "2026-04-27T20:26:07.791823"
+  },
+  {
+    "id": "559ed3cc-13c4-45d7-b08b-c5602c85d0bd",
+    "name": "LIST Software Pvt Ltd",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-04T10:46:38.089556"
+  },
+  {
+    "id": "3e3b8c42-5ab7-48eb-b3c3-fec660d8e341",
+    "name": "Pune Merchant Co-operative Bank, Pune.",
+    "status": "active",
+    "logo": "/images/pune_merchant_bank_logo.jpg",
+    "is_default": false,
+    "created_at": "2026-05-09T16:37:03.173827"
+  },
+  {
+    "id": "3f82ed2b-cd18-4e0d-a534-9ad795ba68a8",
+    "name": "Manmandir Bank",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:37:33.539960"
+  },
+  {
+    "id": "4ca47748-5f59-42f6-9ee1-a3be80c992b4",
+    "name": "Kolhapur Urban Bank, Kolhapur.",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:38:01.740709"
+  },
+  {
+    "id": "08665f0c-59fe-4e1d-a393-de02c27555b7",
+    "name": "Sangli Urban Bank, Sangli.",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:38:25.620034"
+  },
+  {
+    "id": "dbee1af9-230b-41fd-a5d6-9b752128d843",
+    "name": "Kumbhi Bank",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:38:51.947897"
+  },
+  {
+    "id": "784b712f-a536-4f54-a79f-78f2b8d13698",
+    "name": "Baliraja Bank",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:39:07.934286"
+  },
+  {
+    "id": "7bb91de9-bce1-4546-9420-4b67952560ae",
+    "name": "Bailhongal Urban Co-op Bank Ltd",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-14T10:17:13.394517"
+  }
+]
+
+--- agents.txt ---
+[
+  {
+    "id": "d79dceb4-5bef-4c18-8ccc-34cd310c6081",
+    "hostname": "LAPTOP-2C0GN4OS",
+    "os_type": "windows",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "status": "offline",
+    "token": "8ae7040f-4815-4d3c-a339-f1863a727e16",
+    "cpu": 36,
+    "memory": 50,
+    "scripts": [],
+    "last_heartbeat": "2026-05-04T13:44:22.334213",
+    "registered_at": "2026-04-28T16:58:54.203280",
+    "device_key": "d66d0300-f73f-4834-983c-33240b5b5b4c",
+    "last_ip": "172.100.31.151",
+    "running_scripts": []
+  },
+  {
+    "id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "hostname": "WAHID",
+    "os_type": "windows",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "status": "online",
+    "token": "b39117bb-75ad-443e-9e6a-e69d041ecd89",
+    "cpu": 0,
+    "memory": 0,
+    "scripts": [],
+    "last_heartbeat": "2026-05-29T16:43:44.938983",
+    "registered_at": "2026-05-12T17:16:34.821991",
+    "device_key": "WAHID",
+    "last_ip": "172.100.31.40",
+    "running_scripts": [
+      "c:/batchhost-pro/batchscripts/long-running.bat",
+      "c:/batchhost-pro/batchscripts/long-running.bat"
+    ],
+    "_prev_running_scripts": [
+      "c:/batchhost-pro/batchscripts/long-running.bat"
+    ]
+  },
+  {
+    "id": "7c31773e-2c2f-44a8-8e6f-920fb9cabc80",
+    "hostname": "newtestdb-v19",
+    "os_type": "linux",
+    "organization_id": "559ed3cc-13c4-45d7-b08b-c5602c85d0bd",
+    "status": "online",
+    "token": "b7d6ee8b-c49a-4f92-a82c-44d7baa9b189",
+    "cpu": 0,
+    "memory": 0,
+    "scripts": [],
+    "last_heartbeat": "2026-05-29T16:43:44.565534",
+    "registered_at": "2026-05-22T16:26:10.492074",
+    "device_key": "newtestdb-v19",
+    "last_ip": "172.100.30.19",
+    "running_scripts": [],
+    "_prev_running_scripts": []
+  }
+]
+
+--- scripts.txt ---
+[
+  {
+    "id": "e4f8d9b1-2a3b-4c5d-9e6f-7g8h9i0j1k2l",
+    "name": "Immediate Failure Test",
+    "path": "C:\\BatchHost-Pro\\BatchScripts\\immediate_fail.bat",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "os_type": "windows",
+    "type": "bat",
+    "status": "failed",
+    "schedule": null,
+    "enabled": true,
+    "created_at": "2026-05-15T15:55:00.000000",
+    "current_run_id": "596bd77b-ff9d-4f2d-beee-90a95c50ab10",
+    "current_execution_id": "596bd77b-ff9d-4f2d-beee-90a95c50ab10",
+    "pid": 16512,
+    "started_at": "2026-05-26T11:12:38.746950",
+    "last_seen_running_at": "2026-05-26T11:12:51.202450",
+    "status_updated_at": "2026-05-26T11:12:51.202450",
+    "status_version": 19,
+    "last_status_source": "execution_manager",
+    "last_sequence_number": 10,
+    "last_status_reason": "User triggered run from UI",
+    "exit_code": 1,
+    "failed_at": "2026-05-26T11:12:51.202450"
+  },
+  {
+    "id": "39a496f2-d518-48d3-b823-fa993e2a1885",
+    "name": "test_long.bat",
+    "path": "c:\\BatchHost-Pro\\test_long.bat",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "os_type": "windows",
+    "type": "bat",
+    "status": "failed",
+    "enabled": true,
+    "created_at": "2026-05-22T11:49:39.107433",
+    "current_run_id": "530c5215-f457-4275-a621-12bf3f1a2e6f",
+    "current_execution_id": "530c5215-f457-4275-a621-12bf3f1a2e6f",
+    "pid": 22652,
+    "started_at": "2026-05-26T11:12:45.367035",
+    "last_seen_running_at": "2026-05-26T11:12:48.546878",
+    "status_updated_at": "2026-05-26T11:12:48.546878",
+    "status_version": 28,
+    "last_status_source": "execution_manager",
+    "last_sequence_number": 8,
+    "exit_code": 1,
+    "last_status_reason": "User triggered run from UI",
+    "failed_at": "2026-05-26T11:12:48.546878"
+  },
+  {
+    "id": "69d88e00-156a-4ea7-81ff-cc5e070dcc13",
+    "name": "script.bat",
+    "path": "D:\\SARVATRA-ATM-NSSM\\script.bat",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "os_type": "windows",
+    "type": "bat",
+    "status": "completed",
+    "enabled": true,
+    "created_at": "2026-05-29T15:44:35.902870",
+    "current_run_id": "b5c36160-99ad-4248-85e5-37755e8c1292",
+    "current_execution_id": "b5c36160-99ad-4248-85e5-37755e8c1292",
+    "pid": null,
+    "started_at": "2026-05-29T16:21:27.777155",
+    "last_seen_running_at": "2026-05-29T16:22:09.841967",
+    "status_updated_at": "2026-05-29T16:22:09.841967",
+    "status_version": 42,
+    "last_status_source": "execution_manager",
+    "last_sequence_number": 2,
+    "exit_code": 0,
+    "completed_at": "2026-05-29T16:22:09.841967"
+  },
+  {
+    "id": "980e25a2-019d-4b7c-89df-51af5107b2ed",
+    "name": "batchhost-pro_agent.bat",
+    "path": "C:\\BatchHost-Pro\\agents\\batchhost-pro_agent.bat",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "os_type": "windows",
+    "type": "bat",
+    "status": "completed",
+    "enabled": true,
+    "created_at": "2026-05-29T15:44:35.902870",
+    "current_run_id": "641fa464-8b5b-4505-955b-d373b9476fcd",
+    "current_execution_id": "641fa464-8b5b-4505-955b-d373b9476fcd",
+    "pid": null,
+    "started_at": "2026-05-29T16:21:10.330284",
+    "last_seen_running_at": "2026-05-29T16:22:09.214728",
+    "status_updated_at": "2026-05-29T16:22:09.214728",
+    "status_version": 42,
+    "last_status_source": "execution_manager",
+    "last_sequence_number": 2,
+    "exit_code": 0,
+    "completed_at": "2026-05-29T16:22:09.214728"
+  },
+  {
+    "id": "789d9cdb-1510-4e5f-a025-4d5fb05878ee",
+    "name": "long-running.bat",
+    "path": "C:\\BatchHost-Pro\\BatchScripts\\long-running.bat",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "os_type": "windows",
+    "type": "bat",
+    "status": "running",
+    "enabled": true,
+    "created_at": "2026-05-29T15:45:36.450726",
+    "current_run_id": "d95ee544-b8d2-4946-a193-8e39da59a66f",
+    "current_execution_id": "d95ee544-b8d2-4946-a193-8e39da59a66f",
+    "pid": 19432,
+    "started_at": "2026-05-29T16:29:26.554738",
+    "last_seen_running_at": "2026-05-29T16:43:45.389096",
+    "status_updated_at": "2026-05-29T16:43:45.389096",
+    "status_version": 191,
+    "last_status_source": "execution_manager",
+    "last_sequence_number": 146,
+    "last_status_reason": "User triggered stop from UI"
+  }
+]
+
+--- alerts.txt ---
+[
+  {
+    "id": "dd804a97-8c4a-4747-85a7-5c630346b23d",
+    "time": "2026-05-27T14:02:50.395900",
+    "level": "CRITICAL",
+    "type": "AGENT_OFFLINE",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Agent WAHID has gone offline (no heartbeat for 410s)",
+    "email_sent": false
+  },
+  {
+    "id": "b19e77c8-2d7e-425a-b094-e3b7e7e2ed0c",
+    "time": "2026-05-27T14:02:50.431872",
+    "level": "CRITICAL",
+    "type": "AGENT_OFFLINE",
+    "agent_id": "7c31773e-2c2f-44a8-8e6f-920fb9cabc80",
+    "organization_id": "559ed3cc-13c4-45d7-b08b-c5602c85d0bd",
+    "message": "Agent newtestdb-v19 has gone offline (no heartbeat for 411s)",
+    "email_sent": false
+  },
+  {
+    "id": "40b0ee48-b83a-4d11-af70-19113b7c73e7",
+    "time": "2026-05-27T15:13:02.811880",
+    "level": "CRITICAL",
+    "type": "AGENT_OFFLINE",
+    "agent_id": "7c31773e-2c2f-44a8-8e6f-920fb9cabc80",
+    "organization_id": "559ed3cc-13c4-45d7-b08b-c5602c85d0bd",
+    "message": "Agent newtestdb-v19 has gone offline (no heartbeat for 4207s)",
+    "email_sent": false
+  },
+  {
+    "id": "306681f0-b934-4a58-a903-dd62d7760df4",
+    "time": "2026-05-27T15:13:02.878826",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen 75002.798627s ago)",
+    "email_sent": false
+  },
+  {
+    "id": "d48b1fa2-cde6-4571-b06e-0c47233e0714",
+    "time": "2026-05-27T15:14:39.261446",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "f5fdf8d5-bda1-43fe-86d1-a64a63fefe85",
+    "time": "2026-05-27T15:16:16.402773",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "6f258159-7a3e-474c-ad85-a13d64e75f30",
+    "time": "2026-05-27T15:17:46.969984",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "8b4a91c3-7f8a-4950-bb56-500a6afe9a96",
+    "time": "2026-05-27T15:19:25.141520",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "513524cb-bb63-44c4-b244-bdf8ad3f983d",
+    "time": "2026-05-27T15:20:59.547330",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "48a6f083-8a88-4247-82b8-33b898954af5",
+    "time": "2026-05-27T15:22:29.225442",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "83cd989d-0485-4e2c-841a-ac62f7e40535",
+    "time": "2026-05-27T15:24:08.399590",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "2eed8ba7-1a65-443a-b965-cf697529c7fb",
+    "time": "2026-05-27T15:25:36.806642",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "a638a31a-e42a-45f4-ac91-4a7a460af4dc",
+    "time": "2026-05-27T15:27:13.902832",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "8ac92ca9-6c55-42ea-8a95-254aed1b5b99",
+    "time": "2026-05-27T15:28:50.915195",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "2f10a605-3f11-4135-ad87-331971394dd5",
+    "time": "2026-05-27T15:30:27.112328",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "251cf39a-698f-42c2-82b9-9f574fe1cbb1",
+    "time": "2026-05-27T15:32:01.663884",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "7027c1f5-a25d-4e85-8955-9cc82c4de701",
+    "time": "2026-05-27T15:33:38.294331",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "d70ef5ff-6a44-4cfd-973c-e0625e574d09",
+    "time": "2026-05-27T15:35:15.511991",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "e59d8521-9d5b-48f7-9755-a526d23d79fd",
+    "time": "2026-05-27T15:36:52.703298",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "01d9c772-d33f-4784-bcc2-346c63537f70",
+    "time": "2026-05-27T15:38:29.434965",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "9fe985d8-5ddb-445c-8e75-c9c9c9fe4a2b",
+    "time": "2026-05-27T15:40:05.402710",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "235cfabd-a7b0-45c5-a4f3-ac060095c284",
+    "time": "2026-05-27T15:41:47.220742",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "a4e84ebf-5bb1-4522-90da-81c1c84971f8",
+    "time": "2026-05-27T15:43:19.747836",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "2a80ee8f-5e1d-48c0-8cee-8c474a5dce1b",
+    "time": "2026-05-27T15:44:48.723783",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "07a0cff2-2759-4774-88f4-e85da580dbc4",
+    "time": "2026-05-27T15:46:25.195511",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "87937a1c-d88d-424c-bd86-b79996673225",
+    "time": "2026-05-27T15:48:01.945326",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "f5684895-b547-4fb4-83bd-edc96bc0748f",
+    "time": "2026-05-27T15:49:38.661711",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "63a88e23-3e3c-46d6-8165-1bf0f84d325c",
+    "time": "2026-05-27T15:51:14.339623",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "1949eefb-585f-4772-9c31-bc0397be53e0",
+    "time": "2026-05-27T15:52:53.317939",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "f8bb2c8f-d1c1-4c86-a784-7c4c3000dcf1",
+    "time": "2026-05-27T15:54:29.449408",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "b3ff8ac1-62a2-4740-8565-eae6f9d763f6",
+    "time": "2026-05-27T15:56:02.565680",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "203caef6-8e1b-4fd0-8afb-8c775b5cd479",
+    "time": "2026-05-27T15:57:31.770573",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "81cc46a6-fef1-412b-8c53-85281eebb31a",
+    "time": "2026-05-27T15:59:09.861287",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "623088cc-d717-45ce-87e1-2bd7f67ae42d",
+    "time": "2026-05-27T16:00:44.065681",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "19b66bda-a806-42c7-9c9a-9c2d4fa27caa",
+    "time": "2026-05-27T16:02:14.632938",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "fd6d1ec8-7ca9-40d5-b053-35edf6edec10",
+    "time": "2026-05-27T16:03:47.733565",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "f89f8bc7-ff93-40bb-a99c-764fd24cbdf1",
+    "time": "2026-05-27T16:05:23.754910",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "7e56721a-51bd-490a-9847-25452c0faebc",
+    "time": "2026-05-27T16:07:02.111730",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "4d0ce275-f028-45e0-9427-c8ecea79fe99",
+    "time": "2026-05-27T16:08:32.302951",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "e9887058-408f-48f9-9314-121ea65a387b",
+    "time": "2026-05-27T16:10:07.324467",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "4cbfd196-ae5a-4900-bbb8-fb16f24db25a",
+    "time": "2026-05-27T16:11:47.490977",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "af1c0523-d077-4372-bf6a-03d7a3536b82",
+    "time": "2026-05-27T16:13:23.489278",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "9f39dc01-5911-4222-93f9-b7856c5d9665",
+    "time": "2026-05-27T16:14:58.358950",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "5435be0b-d915-4a2d-b9d4-864f0ea943ba",
+    "time": "2026-05-27T16:16:35.647326",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "2e42bb71-d4e9-4252-ab72-5de2bc924fe3",
+    "time": "2026-05-27T16:18:09.633128",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "d12cf76f-e590-4a6a-be4c-811c6d8a41bb",
+    "time": "2026-05-27T16:19:39.241364",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "b803110f-8e68-4600-accf-b697464f88e3",
+    "time": "2026-05-27T16:21:15.546312",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "99ad358c-1b74-4004-b769-4888e40fc055",
+    "time": "2026-05-27T16:22:50.846976",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "29c40486-a67c-4884-8995-6500ed7a656b",
+    "time": "2026-05-27T16:24:22.683967",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "7afedf79-0ff6-4cb1-b76d-5ffd65bad6b1",
+    "time": "2026-05-27T16:25:59.776449",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "79317d67-f2f0-4384-9760-074e5d06097e",
+    "time": "2026-05-27T16:27:33.215559",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "3d49e3ca-1f05-4fda-85b3-dd0afcc780a5",
+    "time": "2026-05-27T16:29:06.958212",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "265702c6-9185-44ec-b4a8-50df6c7aef09",
+    "time": "2026-05-27T16:30:40.191841",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "88e43fdd-9d7b-4009-8545-1f95775548b7",
+    "time": "2026-05-27T16:32:14.727056",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "58020e2b-3a95-49ae-bca9-046d9edd809b",
+    "time": "2026-05-27T16:33:44.043793",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "2c32658f-2fa8-4e4b-b1c9-9e2a5b2334bc",
+    "time": "2026-05-27T16:35:20.165811",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "f478755d-c3a4-46ab-bf6b-ec9b5183dc21",
+    "time": "2026-05-27T16:37:00.754804",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "3e73cb2b-5a1b-4dd0-b605-ca46c3ba4774",
+    "time": "2026-05-27T16:38:32.545948",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "50c6d296-1415-4279-95cc-422b80b8a6c4",
+    "time": "2026-05-27T16:40:11.449276",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "dd3af255-f032-4300-9d17-b46d650cafc5",
+    "time": "2026-05-27T16:41:42.662689",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "370b0308-71e5-4098-b597-325c8631e42f",
+    "time": "2026-05-27T16:43:19.468085",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "974c6363-aa1e-4a54-871a-d844dd25cc9a",
+    "time": "2026-05-27T16:44:50.736222",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "659813ec-c846-4359-b8e3-2db91751f9a8",
+    "time": "2026-05-27T16:46:28.966128",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "37e743d4-4cd8-4044-999a-e05b2976aef5",
+    "time": "2026-05-27T16:48:03.267779",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "c2cfa0d1-6f4a-40ee-950e-95a1e22615a5",
+    "time": "2026-05-27T16:49:32.731767",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "d9d21266-4aad-4260-a7c7-a5d6455b758e",
+    "time": "2026-05-27T16:51:12.311468",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "20b20d69-bd62-42b4-b6d3-8b7bdfcfe10a",
+    "time": "2026-05-27T16:52:41.830981",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "015b9117-7970-4b7a-8886-514c892f65c0",
+    "time": "2026-05-27T16:54:20.676586",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "f7be67ca-dcf5-485b-94a6-4fd754c21ffa",
+    "time": "2026-05-27T16:55:55.911799",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "e9b7534e-bdb4-4279-9d74-8c34cb39bc81",
+    "time": "2026-05-27T16:57:26.393581",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "7c01a8d6-5e95-43ff-b966-8ac77d380b1b",
+    "time": "2026-05-27T16:58:58.341969",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "4fc73a60-a9b2-4f4a-b507-9f7fe09b0e3a",
+    "time": "2026-05-27T17:00:38.176296",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "4300911e-bbc7-4f22-9d7a-6275cb37f4fa",
+    "time": "2026-05-27T17:02:14.720906",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "53963413-92da-4600-a1bd-61dbf38a08bd",
+    "time": "2026-05-27T17:03:53.668056",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "0bbdd325-b4ee-41a9-b3ca-abb7f7285df8",
+    "time": "2026-05-27T17:05:28.057684",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "4c04865a-f764-498f-aab4-f13bcd284406",
+    "time": "2026-05-27T17:07:08.691651",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "de5bd437-9be1-497a-8aad-61e5bc4b3808",
+    "time": "2026-05-27T17:08:38.397358",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "54ff4f1c-fc67-4752-aa5e-504e15ddd63a",
+    "time": "2026-05-27T17:10:11.774561",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "eb7eed2b-cea3-46fc-86f8-19b3e8128160",
+    "time": "2026-05-27T17:11:50.352118",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "e2df19e6-a4d4-4cbe-bef7-04e9d5e09a1b",
+    "time": "2026-05-27T17:13:27.756499",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "a5a41982-489b-4410-ab91-17e3d5779cf2",
+    "time": "2026-05-27T17:15:06.215201",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "dad67fa5-a97e-4e12-96f8-1e3dd14261a7",
+    "time": "2026-05-27T17:16:38.988002",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "d2e03908-7eae-4c60-9827-be8e3ff1b2c9",
+    "time": "2026-05-27T17:18:18.088492",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "9457b26f-4c3c-49aa-8e26-7d710b568a2b",
+    "time": "2026-05-27T17:19:50.385722",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "74786c6e-1cd1-4544-a4b5-dc18523e0b15",
+    "time": "2026-05-27T17:21:28.136693",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "f2adf84e-3366-4762-b387-b517e5bbf846",
+    "time": "2026-05-27T17:23:02.965650",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "0b03217f-27db-4824-88b0-e3b2a999a024",
+    "time": "2026-05-27T17:24:36.597676",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "d5398499-122b-4caf-8657-6cbc5611aee0",
+    "time": "2026-05-27T17:26:09.671222",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "cf9fbe08-7b70-42e6-bcf2-fef8cee7ea9a",
+    "time": "2026-05-27T17:27:47.241718",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "fe7a89a7-824b-4eeb-b65e-e8880bf7d032",
+    "time": "2026-05-27T17:29:25.034698",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "55baceb0-cba6-4e10-a069-f5657ffcfd3f",
+    "time": "2026-05-27T17:30:57.808435",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "f9f33ad7-ebad-456c-8ac4-3e9fd3af44ba",
+    "time": "2026-05-27T17:32:36.828682",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "eb419908-ed0b-481f-8d6d-fbcc654b9199",
+    "time": "2026-05-27T17:34:09.604082",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "9d98651e-a1cd-42e3-8f33-7b29ccddc0c9",
+    "time": "2026-05-27T17:35:47.553246",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "6c428373-d50e-4cfd-9c19-3604e90aef2b",
+    "time": "2026-05-27T17:37:25.443506",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "ef057968-b197-4017-8594-3eba61289eb1",
+    "time": "2026-05-27T17:40:36.035280",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "a8321a79-dec6-48ee-a6fe-89dadebdf97d",
+    "time": "2026-05-27T17:42:13.875139",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "5db9eddf-f308-40d6-a60b-5e8ba94bc768",
+    "time": "2026-05-27T17:43:47.993469",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "d02a1000-320c-4919-bab0-31ae5604d2f9",
+    "time": "2026-05-27T17:45:20.537514",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  },
+  {
+    "id": "291644f4-68aa-4f83-a3dc-b0405d068a4c",
+    "time": "2026-05-27T17:46:53.747275",
+    "level": "WARNING",
+    "type": "SCRIPT_TIMEOUT",
+    "agent_id": "2add9c4f-0a5a-45d1-8dca-3b9c48c38af4",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "message": "Script 'C:\\BatchHost-Pro\\BatchScripts\\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)",
+    "email_sent": false
+  }
+]
+
+--- users.txt ---
+[
+  {
+    "id": "3db22c50-7104-4eff-ba49-fba87a9e3399",
+    "username": "Wahid",
+    "role": "organization_admin",
+    "email": "wahidjamadar2020@gmail.com",
+    "status": "active",
+    "last_login": "2026-05-12T13:11:33.951968",
+    "created_at": "2026-04-22T21:17:33.474646",
+    "organization_id": "559ed3cc-13c4-45d7-b08b-c5602c85d0bd",
+    "previous_login": "2026-05-12T11:32:54.109462",
+    "total_logins": 41,
+    "force_logout_at": "2026-05-11T19:13:31.237244"
+  },
+  {
+    "id": "aa38e3e6-f7a6-4e3e-9eba-dfa096ae68ae",
+    "username": "Wahid Jamadar",
+    "role": "super_admin",
+    "email": "wahid.jamadar@listspl.co.in",
+    "status": "active",
+    "last_login": "2026-05-29T16:28:31.029008",
+    "created_at": "2026-04-23T11:32:30.135552",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "total_logins": 115,
+    "previous_login": "2026-05-29T16:03:24.948959",
+    "force_logout_at": "2026-05-29T11:55:28.366771"
+  },
+  {
+    "id": "b7b4984d-eab1-4343-ba16-02300d37b01e",
+    "username": "Omkar Patil",
+    "role": "super_admin",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "email": "omkar.patil@listspl.co.in",
+    "status": "active",
+    "last_login": "2026-05-08T13:33:40.248281",
+    "created_at": "2026-04-28T10:00:00",
+    "previous_login": "2026-05-04T15:52:00",
+    "total_logins": 15
+  },
+  {
+    "id": "36dcd7cf-dec4-45c9-9bae-285c44aa4913",
+    "username": "Pravin Pise",
+    "role": "organization_viewer",
+    "organization_id": "4ca47748-5f59-42f6-9ee1-a3be80c992b4",
+    "email": "pravin.pise@listspl.co.in",
+    "status": "active",
+    "last_login": null,
+    "created_at": "2026-05-04T11:27:12.225922",
+    "total_logins": 1
+  },
+  {
+    "id": "b46bf0f9-7b54-4dc8-95ab-a855df4d4a00",
+    "username": "Pavan Ichalkaranje",
+    "role": "organization_viewer",
+    "organization_id": "3e3b8c42-5ab7-48eb-b3c3-fec660d8e341",
+    "email": "pavan.ichalkaranje@listspl.co.in",
+    "status": "active",
+    "last_login": null,
+    "created_at": "2026-05-04T15:54:33.739359",
+    "total_logins": 1
+  },
+  {
+    "id": "a7c2f466-65ab-4529-bee6-e10b051cec7f",
+    "username": "Vaibhav Deshpande",
+    "role": "super_admin",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "email": "vaibhav.deshpande@listspl.co.in",
+    "status": "active",
+    "last_login": null,
+    "created_at": "2026-05-04T15:58:08.158652",
+    "total_logins": 1
+  },
+  {
+    "id": "069a627b-414e-459f-8928-c7615b8e5f26",
+    "username": "Avinash Mali",
+    "role": "super_admin",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "email": "avinash.mali@listspl.co.in",
+    "status": "active",
+    "last_login": null,
+    "previous_login": null,
+    "created_at": "2026-05-13T19:20:23.138322"
+  },
+  {
+    "id": "f1d88e72-e414-46b0-b3af-701123981fa2",
+    "username": "admin",
+    "role": "super_admin",
+    "organization_id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "email": "admin",
+    "status": "active",
+    "last_login": null,
+    "previous_login": null,
+    "created_at": "2026-05-19T16:14:48.123610"
+  }
+]
+
+--- 2add9c4f-0a5a-45d1-8dca-3b9c48c38af4_2026-05-15.txt ---
+
+
+--- 2add9c4f-0a5a-45d1-8dca-3b9c48c38af4_2026-05-18.txt ---
+
+
+--- 2add9c4f-0a5a-45d1-8dca-3b9c48c38af4_2026-05-22.txt ---
+
+
+--- 2add9c4f-0a5a-45d1-8dca-3b9c48c38af4_2026-05-25.txt ---
+
+
+--- 2add9c4f-0a5a-45d1-8dca-3b9c48c38af4_2026-05-26.txt ---
+
+
+--- 2add9c4f-0a5a-45d1-8dca-3b9c48c38af4_2026-05-27.txt ---
+[2026-05-27T15:13:02.876572] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen 75002.798627s ago)
+[2026-05-27T15:14:39.255523] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:16:14.017231] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:17:46.965619] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:19:22.991460] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:20:57.449895] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:22:29.220597] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:24:05.907712] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:25:36.804500] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:27:13.902832] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:28:50.911496] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:30:27.106126] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:32:01.661665] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:33:38.282661] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:35:15.509668] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:36:52.697299] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:38:29.426421] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:40:05.385564] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:41:43.522641] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:43:16.820925] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:44:48.720714] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:46:25.191556] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:48:01.923385] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:49:38.654041] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:51:14.335733] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:52:53.263657] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:54:27.204696] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:56:00.547219] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:57:31.770573] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T15:59:07.661323] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:00:41.507100] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:02:14.576049] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:03:47.731560] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:05:23.752873] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:06:59.704087] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:08:32.300877] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:10:07.320836] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:11:47.485531] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:13:23.477757] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:14:58.354908] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:16:33.515580] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:18:07.309258] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:19:39.178873] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:21:15.485209] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:22:50.845404] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:24:22.680520] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:25:57.596227] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:27:31.087982] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:29:04.771399] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:30:38.161972] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:32:12.584079] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:33:44.041692] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:35:20.165811] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:36:57.591325] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:38:32.541896] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:40:08.775781] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:41:42.656767] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:43:16.785262] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:44:50.733122] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:46:26.622010] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:48:01.094400] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:49:32.726211] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:51:09.539511] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:52:41.784416] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:54:18.457191] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:55:53.421671] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:57:26.390044] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T16:58:58.339267] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:00:38.176296] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:02:14.713788] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:03:53.663984] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:05:28.053056] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:07:06.375486] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:08:38.391483] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:10:11.774561] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:11:50.346893] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:13:27.752836] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:15:06.212559] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:16:38.985544] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:18:18.082632] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:19:50.375364] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:21:28.136693] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:23:01.543119] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:24:36.597676] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:26:09.668281] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:27:47.241718] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:29:25.034698] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:30:57.803575] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:32:36.828682] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:34:09.604082] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:35:47.548750] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:37:25.443506] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:40:36.028520] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:42:13.875139] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:43:46.621990] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:45:20.536416] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+[2026-05-27T17:46:53.745710] [WARNING] SCRIPT_TIMEOUT: Script 'C:\BatchHost-Pro\BatchScripts\long-running.bat' TIMED OUT on WAHID (last seen Nones ago)
+
+
+--- 2add9c4f-0a5a-45d1-8dca-3b9c48c38af4_2026-05-29.txt ---
+
+

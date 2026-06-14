@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}Intelligent Synchronization | FileBridge{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium Card Selections */
+    .sync-type-card, .scheduler-card, .sync-direction-card {
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        position: relative;
+        overflow: hidden;
+    }
+    .sync-type-card:hover, .scheduler-card:hover, .sync-direction-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(13, 110, 253, 0.4);
+        transform: translateY(-2px);
+    }
+    .sync-type-card.active, .scheduler-card.active, .sync-direction-card.active {
+        background: rgba(13, 110, 253, 0.15);
+        border-color: #0d6efd;
+        box-shadow: 0 0 15px rgba(13, 110, 253, 0.2);
+    }
+    .sync-type-card .card-icon, .sync-direction-card .card-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+        transition: color 0.3s;
+    }
+    .sync-type-card.active .card-icon, .sync-direction-card.active .card-icon {
+        color: #0d6efd;
+    }
+    .sync-type-card .check-mark, .sync-direction-card .check-mark {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.3s;
+    }
+    .sync-type-card.active .check-mark, .sync-direction-card.active .check-mark {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* Table Improvements */
+    .diff-table {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        overflow: hidden;
+        table-layout: fixed;
+        width: 100%;
+    }
+    .diff-table th {
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--fb-muted);
+        padding: 8px 10px;
+    }
+    .diff-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .diff-table th:nth-child(1), .diff-table td:nth-child(1) {
+        width: 58%;
+    }
+    .diff-table th:nth-child(2), .diff-table td:nth-child(2) {
+        width: 20%;
+        text-align: right;
+    }
+    .diff-table th:nth-child(3), .diff-table td:nth-child(3) {
+        width: 22%;
+        text-align: center;
+    }
+    
+    #sourceServerBadge {
+        background-color: rgba(16, 185, 129, 0.12) !important;
+        color: #10b981 !important;
+        border: 1px solid rgba(16, 185, 129, 0.3) !important;
+        font-weight: 600;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+        padding: 4px 8px;
+    }
+    #destServerBadge {
+        background-color: rgba(14, 165, 233, 0.12) !important;
+        color: #0ea5e9 !important;
+        border: 1px solid rgba(14, 165, 233, 0.3) !important;
+        font-weight: 600;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+        padding: 4px 8px;
+    }
+    
+    /* Path Browser Styles */
+    .path-item {
+        cursor: pointer;
+        transition: background 0.2s;
+        border-radius: 4px;
+    }
+    .path-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    .path-item.selected {
+        background: rgba(13, 110, 253, 0.2);
+        color: #fff;
+    }
+    
+    .breadcrumb-item a {
+        text-decoration: none;
+        color: #0d6efd;
+    }
+    .breadcrumb-item.active {
+        color: #6c757d;
+    }
+
+    /* Skeleton Loading */
+    .skeleton {
+        background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 4px;
+    }
+    @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+</style>
+
+<div class="container-fluid animate__animated animate__fadeIn px-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary border-opacity-25">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-white">Intelligent Folder Sync</h1>
+            <p class="text-secondary mb-0">Professional enterprise file synchronization platform</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-dark border-secondary border-opacity-50" id="refreshAllBtn">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh All
+            </button>
+            {% if user_has_role(user, 'Super Admin', 'Admin') %}
+            <button class="btn btn-primary shadow-lg" id="newSyncJobBtn">
+                <i class="bi bi-plus-lg me-1"></i> New Sync Job
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Active Sync Pairs -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0 fw-bold text-white"><i class="bi bi-link-45deg text-primary me-2"></i>Active Synchronized Pairs</h5>
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" id="pairCount">0 Pairs Active</span>
+        </div>
+        <div class="row g-3" id="activePairsContainer">
+            <!-- Sync Pair Cards will be loaded here -->
+            <div class="col-12 text-center py-5 glass-panel border-dashed">
+                <div class="spinner-border text-primary mb-3"></div>
+                <p class="text-secondary mb-0">Loading synchronization configurations...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Sync Activity -->
+    <div class="glass-panel mb-4">
+        <div class="p-3 border-bottom border-secondary border-opacity-10 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">Live Synchronization Activity</h5>
+            <div class="d-flex align-items-center gap-3">
+                <div class="operation-state small" id="syncStatus">IDLE</div>
+                <button class="btn btn-sm btn-dark" id="clearLogsBtn">Clear Log</button>
+            </div>
+        </div>
+        <div class="p-0" style="max-height: 250px; overflow-y: auto;">
+            <div class="list-group list-group-flush" id="activityLog">
+                <div class="list-group-item bg-transparent border-secondary border-opacity-10 text-center py-4 text-secondary" id="logEmptyState">
+                    No activity recorded. Start synchronization to see progress.
+                </div>
+            </div>
+        </div>
+        <!-- Progress Bar -->
+        <div class="p-3 border-top border-secondary border-opacity-10 bg-dark bg-opacity-25 d-none" id="globalProgressContainer">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="small text-muted" id="currentSyncingFile">Synchronizing...</span>
+                <span class="small text-white fw-bold" id="globalProgressPercent">0%</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%" id="globalProgressBar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit / New Sync Job Modal -->
+<div class="modal fade" id="syncJobModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content glass-panel border-secondary shadow-lg">
+            <div class="modal-header border-bottom border-secondary border-opacity-25 p-4">
+                <h4 class="modal-title fw-bold text-white" id="syncModalTitle"><i class="bi bi-plus-circle-dotted me-2 text-primary"></i>Create New Sync Job</h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    <!-- Left Sidebar - Settings -->
+                    <div class="col-lg-5 border-end border-secondary border-opacity-25 p-4" style="background: rgba(0,0,0,0.1);">
+                        <div class="mb-4">
+                            <label class="form-label small text-muted fw-bold mb-2">JOB NAME</label>
+                            <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white" id="jobName" placeholder="e.g. Daily Production Backup">
+                        </div>
+
+                        <!-- Sync Type Selection -->
+                        <div class="mb-4">
+                            <label class="form-label small text-muted fw-bold mb-2">SYNCHRONIZATION MODE</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="sync-type-card p-3 rounded text-center active" data-type="server">
+                                        <i class="bi bi-hdd-network card-icon d-block"></i>
+                                        <span class="small fw-bold text-white">Sync Server</span>
+                                        <i class="bi bi-check-circle-fill check-mark text-primary"></i>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="sync-type-card p-3 rounded text-center" data-type="drive">
+                                        <i class="bi bi-device-hdd card-icon d-block"></i>
+                                        <span class="small fw-bold text-white">Sync Drive</span>
+                                        <i class="bi bi-check-circle-fill check-mark text-primary"></i>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="sync-type-card p-3 rounded text-center" data-type="folder">
+                                        <i class="bi bi-folder2 card-icon d-block"></i>
+                                        <span class="small fw-bold text-white">Sync Folder</span>
+                                        <i class="bi bi-check-circle-fill check-mark text-primary"></i>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="sync-type-card p-3 rounded text-center" data-type="files">
+                                        <i class="bi bi-file-earmark-text card-icon d-block"></i>
+                                        <span class="small fw-bold text-white">Sync Files</span>
+                                        <i class="bi bi-check-circle-fill check-mark text-primary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- Source -->
+                            <div class="col-12">
+                                <label class="form-label small text-muted fw-bold mb-1">SOURCE SERVER</label>
+                                <select class="form-select bg-dark border-secondary border-opacity-25 text-white mb-2" id="modalSourceServer">
+                                    <option value="">Select Source Server</option>
+                                    {% for server in servers %}
+                                    <option value="{{ server.id }}" data-hostname="{{ server.hostname }}">{{ server.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="input-group">
+                                    <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white fw-mono small" id="jobSourcePath" placeholder="/source/path">
+                                    <button class="btn btn-outline-secondary browse-btn" data-target="jobSourcePath" data-server-select="modalSourceServer">Browse</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Destination -->
+                            <div class="col-12">
+                                <label class="form-label small text-muted fw-bold mb-1">DESTINATION SERVER</label>
+                                <select class="form-select bg-dark border-secondary border-opacity-25 text-white mb-2" id="modalDestServer">
+                                    <option value="">Select Destination Server</option>
+                                    {% for server in servers %}
+                                    <option value="{{ server.id }}" data-hostname="{{ server.hostname }}">{{ server.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="input-group">
+                                    <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white fw-mono small" id="jobDestPath" placeholder="/dest/path">
+                                    <button class="btn btn-outline-secondary browse-btn" data-target="jobDestPath" data-server-select="modalDestServer">Browse</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Direction -->
+                        <div class="mt-4">
+                            <label class="form-label small text-muted fw-bold mb-2">SYNCHRONIZATION DIRECTION</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="sync-direction-card p-3 rounded text-center active" data-direction="bidirectional">
+                                        <i class="bi bi-arrow-left-right card-icon d-block"></i>
+                                        <span class="small fw-bold text-white">Bidirectional</span>
+                                        <i class="bi bi-check-circle-fill check-mark text-primary"></i>
+                                        <div class="x-small text-muted mt-1" style="font-size: 0.65rem;">Changes sync both ways</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="sync-direction-card p-3 rounded text-center" data-direction="left_to_right">
+                                        <i class="bi bi-arrow-right-square card-icon d-block"></i>
+                                        <span class="small fw-bold text-white">One Directional</span>
+                                        <i class="bi bi-check-circle-fill check-mark text-primary"></i>
+                                        <div class="x-small text-muted mt-1" style="font-size: 0.65rem;">Source to Destination only</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scheduler -->
+                        <div class="mt-4">
+                            <label class="form-label small text-muted fw-bold mb-2">SCHEDULER</label>
+                            <div class="list-group scheduler-list">
+                                <div class="scheduler-card p-2 px-3 rounded mb-2 d-flex align-items-center gap-3 active" data-interval="300">
+                                    <i class="bi bi-clock-history text-primary"></i>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-white">Every 5 Minutes</div>
+                                        <div class="x-small text-muted">High frequency synchronization</div>
+                                    </div>
+                                    <i class="bi bi-check text-primary fs-4"></i>
+                                </div>
+                                <div class="scheduler-card p-2 px-3 rounded mb-2 d-flex align-items-center gap-3" data-interval="900">
+                                    <i class="bi bi-clock"></i>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-white">Every 15 Minutes</div>
+                                        <div class="x-small text-muted">Standard update cycle</div>
+                                    </div>
+                                    <i class="bi bi-check text-primary fs-4 d-none"></i>
+                                </div>
+                                <div class="scheduler-card p-2 px-3 rounded mb-2 d-flex align-items-center gap-3" data-interval="3600">
+                                    <i class="bi bi-hourglass-split"></i>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-white">Every 1 Hour</div>
+                                        <div class="x-small text-muted">Low frequency updates</div>
+                                    </div>
+                                    <i class="bi bi-check text-primary fs-4 d-none"></i>
+                                </div>
+                                <div class="scheduler-card p-2 px-3 rounded d-flex align-items-center gap-3" data-interval="0">
+                                    <i class="bi bi-hand-index-thumb"></i>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-white">Manual Only</div>
+                                        <div class="x-small text-muted">Trigger synchronization manually</div>
+                                    </div>
+                                    <i class="bi bi-check text-primary fs-4 d-none"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Pane - Preview -->
+                    <div class="col-lg-7 p-4 d-flex flex-column" style="background: rgba(0,0,0,0.2);">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-eye me-2 text-primary"></i>Synchronization Preview</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="previewSyncBtn">
+                                <i class="bi bi-search me-1"></i> Scan & Preview
+                            </button>
+                        </div>
+
+                        <div class="flex-grow-1 border border-secondary border-opacity-10 rounded overflow-hidden d-flex flex-column" id="previewArea" style="min-height: 400px;">
+                            <!-- Empty State / Loading / Results -->
+                            <div class="m-auto text-center p-5" id="previewEmptyState">
+                                <i class="bi bi-clipboard2-data fs-1 text-secondary opacity-25 mb-3 d-block"></i>
+                                <p class="text-secondary small mb-0">Configure the job and click "Scan & Preview" to compare source and destination files.</p>
+                            </div>
+
+                            <div class="d-none w-100 h-100 p-4" id="previewLoading">
+                                <div class="skeleton mb-3" style="height: 40px; width: 100%;"></div>
+                                <div class="skeleton mb-2" style="height: 30px; width: 90%;"></div>
+                                <div class="skeleton mb-2" style="height: 30px; width: 95%;"></div>
+                                <div class="skeleton mb-2" style="height: 30px; width: 85%;"></div>
+                                <div class="text-center mt-4">
+                                    <div class="spinner-border text-primary spinner-border-sm me-2"></div>
+                                    <span class="small text-secondary">Scanning real filesystem data...</span>
+                                </div>
+                            </div>
+
+                            <div class="d-none w-100 h-100 overflow-auto d-flex flex-column" id="previewResults">
+                                <div class="p-3 border-bottom border-secondary border-opacity-10 d-flex gap-3 flex-wrap bg-dark bg-opacity-50" id="previewSummaryBar">
+                                    <div class="summary-item"><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" id="sumNewSource">0 New Source</span></div>
+                                    <div class="summary-item"><span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" id="sumNewDest">0 New Dest</span></div>
+                                    <div class="summary-item"><span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" id="sumModified">0 Modified</span></div>
+                                    <div class="summary-item"><span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25" id="sumConflict">0 Conflicts</span></div>
+                                    <div class="summary-item ms-auto text-secondary x-small align-self-center" id="sumIdentical">0 Identical files skipped</div>
+                                </div>
+                                <div class="row g-2 p-3 flex-grow-1" style="min-height: 0;">
+                                    <!-- Source Server Column -->
+                                    <div class="col-md-6 d-flex flex-column h-100">
+                                        <div class="glass-panel p-3 border-secondary border-opacity-25 d-flex flex-column h-100 bg-black bg-opacity-20">
+                                            <div class="mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <span class="fw-bold text-success small"><i class="bi bi-hdd-network me-1"></i>SOURCE SERVER</span>
+                                                    <span class="badge x-small" id="sourceServerBadge">Source</span>
+                                                </div>
+                                                <div class="text-secondary x-small text-truncate mt-1" id="sourcePathDisplay" title="">Path: /source/path</div>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-auto" style="max-height: 380px;">
+                                                <table class="table table-dark table-hover mb-0 x-small diff-table">
+                                                    <thead class="sticky-top bg-dark" style="z-index: 10;">
+                                                        <tr>
+                                                            <th>File Name</th>
+                                                            <th>Size</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="sourcePreviewRows">
+                                                        <!-- Source Rows injected via JS -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Destination Server Column -->
+                                    <div class="col-md-6 d-flex flex-column h-100">
+                                        <div class="glass-panel p-3 border-secondary border-opacity-25 d-flex flex-column h-100 bg-black bg-opacity-20">
+                                            <div class="mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <span class="fw-bold text-info small"><i class="bi bi-hdd-network me-1"></i>DESTINATION SERVER</span>
+                                                    <span class="badge x-small" id="destServerBadge">Destination</span>
+                                                </div>
+                                                <div class="text-secondary x-small text-truncate mt-1" id="destPathDisplay" title="">Path: /dest/path</div>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-auto" style="max-height: 380px;">
+                                                <table class="table table-dark table-hover mb-0 x-small diff-table">
+                                                    <thead class="sticky-top bg-dark" style="z-index: 10;">
+                                                        <tr>
+                                                            <th>File Name</th>
+                                                            <th>Size</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="destPreviewRows">
+                                                        <!-- Destination Rows injected via JS -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 p-2 bg-info bg-opacity-10 border border-info border-opacity-25 rounded d-flex gap-2 align-items-center">
+                            <i class="bi bi-info-circle text-info"></i>
+                            <p class="x-small text-secondary mb-0">Preview shows actual differences based on file size and modification time from both servers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary border-opacity-25 p-4 sticky-bottom bg-dark">
+                <button type="button" class="btn btn-dark px-4 py-2" data-bs-dismiss="modal">Cancel</button>
+                <div class="ms-auto d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary px-4 py-2" id="saveSyncChangesBtn">Save Changes</button>
+                    <button type="button" class="btn btn-primary px-5 py-2 shadow-lg" id="applySyncJobBtn">
+                        <i class="bi bi-play-fill me-1"></i> Apply & Sync Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Path Browser Modal -->
+<div class="modal fade" id="pathBrowserModal" tabindex="-1" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-panel border-secondary shadow-lg">
+            <div class="modal-header border-bottom border-secondary border-opacity-25">
+                <h5 class="modal-title fw-bold"><i class="bi bi-folder2-open me-2 text-warning"></i>Browse Filesystem</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="bg-dark p-2 px-3 border-bottom border-secondary border-opacity-10">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0 x-small" id="browserBreadcrumbs">
+                            <li class="breadcrumb-item active">Root</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="browser-list overflow-auto" style="height: 350px;" id="browserList">
+                    <!-- Files injected via JS -->
+                    <div class="p-5 text-center">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary border-opacity-25">
+                <span class="me-auto x-small text-muted" id="browserSelectionInfo">No selection</span>
+                <button type="button" class="btn btn-sm btn-dark" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary px-4" id="selectPathBtn">Select</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/synchronization.js') }}"></script>
+{% endblock %}

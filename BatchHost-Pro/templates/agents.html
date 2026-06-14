@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% set active_page = "agents" %}
+{% block title %}Agents{% endblock %}
+{% block page_title %}Agents{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-heading">Agents</div>
+    <div class="page-subtitle">Manage connected runner machines</div>
+  </div>
+  <div class="toolbar">
+    <div class="filter-tabs" id="agentFilter">
+      <div class="filter-tab active" onclick="filterAgents('all', this)">All</div>
+      <div class="filter-tab" onclick="filterAgents('online', this)">Online</div>
+      <div class="filter-tab" onclick="filterAgents('offline', this)">Offline</div>
+    </div>
+    {% if user and user.role == 'super_admin' %}
+    <select id="orgFilter" class="btn btn-secondary btn-sm" style="width: 180px; text-align: left; padding-right: 25px; appearance: auto;" onchange="renderAgents()">
+      <option value="all">All Organizations</option>
+    </select>
+    {% endif %}
+    <button class="btn btn-secondary btn-sm" onclick="loadAgents()">Refresh</button>
+  </div>
+</div>
+
+<div class="agents-grid" id="agentsGrid">
+  <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">Loading agents...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allAgents = [];
+let organizations = [];
+let currentFilter = 'all';
+
+async function loadAgents() {
+  const r = await fetch('/api/agents');
+  allAgents = await r.json();
+  renderAgents();
+}
+
+async function loadOrgs() {
+  {% if user and user.role == 'super_admin' %}
+  try {
+    const r = await fetch('/api/organizations');
+    organizations = await r.json();
+    const select = document.getElementById('orgFilter');
+    if (select) {
+      organizations.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.id;
+        opt.textContent = o.name;
+        select.appendChild(opt);
+      });
+    }
+  } catch (e) {
+    console.error("Failed to load organizations", e);
+  }
+  {% endif %}
+}
+
+function filterAgents(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('#agentFilter .filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderAgents();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+function renderAgents() {
+  const grid = document.getElementById('agentsGrid');
+  let list = allAgents;
+  
+  // Status filter
+  if (currentFilter !== 'all') {
+    list = list.filter(a => a.status === currentFilter);
+  }
+  
+  // Organization filter (for super admin)
+  const orgFilter = document.getElementById('orgFilter');
+  if (orgFilter && orgFilter.value !== 'all') {
+    list = list.filter(a => a.organization_id === orgFilter.value);
+  }
+  if (list.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon"></div><p>No agents found</p></div></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(a => {
+    const isWin = a.os_type === 'windows';
+    const isOnline = a.status === 'online';
+    const cpu = a.cpu || 0;
+    const mem = a.memory || 0;
+    const cpuColor = cpu > 80 ? 'var(--red)' : cpu > 60 ? 'var(--yellow)' : 'var(--accent)';
+    const memColor = mem > 80 ? 'var(--red)' : mem > 60 ? 'var(--yellow)' : 'var(--purple)';
+    const safeHostname = escapeHtml(a.hostname);
+    const safeId = escapeHtml(a.id);
+    const safeOrg = escapeHtml(a.organization_name || 'No Org');
+    const orgBadge = `{% if user and user.role == 'super_admin' %}<div style="font-size:10px;color:var(--accent);font-weight:600;margin-top:2px;">${safeOrg}</div>{% endif %}`;
+    return `
+    <div class="agent-card ${isOnline ? '' : 'offline'}">
+      <div class="agent-header">
+        <div class="agent-icon">${isWin ? 'W' : 'L'}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="agent-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeHostname}</div>
+          <div class="agent-id" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeId}</div>
+          ${orgBadge}
+        </div>
+        <span class="badge ${isOnline ? 'green' : 'red'}">${a.status}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div style="text-align:center;background:var(--bg3);border-radius:7px;padding:8px 4px;">
+          <div style="font-size:17px;font-weight:700;color:var(--text);font-family:var(--mono)">${a.script_count||0}</div>
+          <div style="font-size:10px;color:var(--text3)">Scripts</div>
+        </div>
+        <div style="text-align:center;background:var(--bg3);border-radius:7px;padding:8px 4px;">
+          <div style="font-size:17px;font-weight:700;color:var(--yellow);font-family:var(--mono)">${a.running_count||0}</div>
+          <div style="font-size:10px;color:var(--text3)">Running</div>
+        </div>
+        <div style="text-align:center;background:var(--bg3);border-radius:7px;padding:8px 4px;">
+          <div style="font-size:17px;font-weight:700;color:var(--red);font-family:var(--mono)">${a.failed_count||0}</div>
+          <div style="font-size:10px;color:var(--text3)">Failed</div>
+        </div>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-label"><span>CPU</span><span style="color:${cpuColor}">${cpu}%</span></div>
+        <div class="meter-bar"><div class="meter-fill cpu" style="width:${cpu}%;background:${cpuColor}"></div></div>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-label"><span>Memory</span><span style="color:${memColor}">${mem}%</span></div>
+        <div class="meter-bar"><div class="meter-fill mem" style="width:${mem}%;background:${memColor}"></div></div>
+      </div>
+      <div style="margin-top:10px;font-size:10px;color:var(--text3);font-family:var(--mono)">
+        OS: ${escapeHtml(a.os_type) || '?'} · Last HB: ${fmtTime(a.last_heartbeat)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+async function init() {
+  await loadAgents();
+  await loadOrgs();
+}
+
+init();
+setInterval(loadAgents, 10000);
+</script>
+{% endblock %}

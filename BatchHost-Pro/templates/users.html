@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% set active_page = "users" %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-heading">Users</div>
+    <div class="page-subtitle">Dashboard access management</div>
+  </div>
+  <div class="toolbar">
+    <input type="text" id="userSearch" placeholder="Search user by name..." oninput="filterUsers()" style="display:inline-block; width:200px; margin-right:10px; padding:5px 10px; border:1px solid #ccc; border-radius:4px;">
+    {% if user and user.role != 'organization_viewer' %}
+    <button class="btn btn-primary btn-sm" onclick="openCreateModal()">Add User</button>
+    {% endif %}
+    <button class="btn btn-secondary btn-sm" onclick="loadUsers()">Refresh</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Email</th>
+          <th>Organization</th>
+          <th>Status</th>
+          <th>Last Login</th>
+          <th style="text-align:center">Edit</th>
+          <th style="text-align:center">Account</th>
+          <th style="text-align:center">Delete</th>
+        </tr>
+      </thead>
+      <tbody id="usersTable">
+        <tr>
+          <td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <div class="modal-title">Add User</div>
+    <div class="form-row"><label>Username</label><input type="text" id="createUsername"></div>
+    <div class="form-row"><label>Email</label><input type="email" id="createEmail"></div>
+    <div class="form-row"><label>Password</label><input type="password" id="createPassword"></div>
+    <div class="form-row" id="createOrgRow" {% if not (user and user.role == 'super_admin') %}style="display:none;"{% endif %}><label>Organization</label><select id="createOrganization"></select></div>
+    <div style="font-size:12px;color:var(--text2);background:var(--bg3);padding:8px;border-radius:6px;">New users are
+      created with the Organization Viewer role.</div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER SECTION -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">Edit User</div>
+    <input type="hidden" id="editId">
+
+    <!-- Edit Username -->
+    <div class="form-row">
+      <label>Username</label>
+      <input type="text" id="editUsername">
+    </div>
+
+    <!-- Edit Email of user -->
+    <div class="form-row">
+      <label>Email</label>
+      <input type="email" id="editEmail">
+    </div>
+
+    <!-- Edit User Role -->
+    <div class="form-row">
+      <label>Role</label>
+      <select id="editRole" onchange="syncEditOrgVisibility()">
+        <option value="super_admin">Super Admin</option>
+        <option value="organization_admin">Organization Admin</option>
+        <option value="organization_viewer">Organization Viewer</option>
+      </select>
+    </div>
+    <!-- Edit organization -->
+    <div class="form-row" id="editOrgRow" {% if not (user and user.role == 'super_admin') %}style="display:none;"{% endif %}>
+      <label>Organization</label>
+      <select id="editOrganization"></select>
+    </div>
+    <!-- Edit password -->
+    <div class="form-row"><label>New Password (leave blank to keep)</label><input type="password" id="editPassword"
+        placeholder="New password..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUser()">Save Changes</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const IS_ADMIN = {{ 'true' if user and user.role == 'super_admin' else 'false' }};
+  const IS_ORG_ADMIN = {{ 'true' if user and user.role == 'organization_admin' else 'false' }};
+  let organizations = [];
+  let allUsers = [];
+
+  async function loadOrganizations() {
+    if (!IS_ADMIN) return;
+    const r = await fetch('/api/organizations');
+    organizations = await r.json();
+    const opts = organizations
+      .filter(o => (o.status || 'active') === 'active')
+      .map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+    document.getElementById('createOrganization').innerHTML = opts;
+    document.getElementById('editOrganization').innerHTML = opts;
+  }
+
+  function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+function filterUsers() {
+  const query = document.getElementById('userSearch').value.toLowerCase();
+  const filtered = allUsers.filter(u => (u.username || '').toLowerCase().includes(query));
+  renderUsers(filtered);
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('usersTable');
+  if (users.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">U</div><p>No users found</p></div></td></tr>`;
+    return;
+  }
+  const roleColor = { super_admin: 'purple', organization_admin: 'blue', organization_viewer: 'gray' };
+  tbody.innerHTML = users.map(u => {
+    const safeUsername = escapeHtml(u.username);
+    const safeEmail = escapeHtml(u.email);
+    const safeOrg = escapeHtml(u.organization_name || (u.role === 'super_admin' ? 'Global' : '-'));
+    return `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-soft);border:1px solid rgba(59,130,246,0.28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--accent);flex-shrink:0">${(u.username || 'U')[0].toUpperCase()}</div>
+          <span class="td-name">${safeUsername}</span>
+        </div>
+      </td>
+      <td><span class="badge ${roleColor[u.role] || 'gray'}">${(u.role || '').replace('_', ' ')}</span></td>
+      <td style="font-size:12px;color:var(--text2)">${safeEmail || '-'}</td>
+      <td style="font-size:12px;color:var(--text2)">${safeOrg}</td>
+      <td><span class="badge ${u.web_status === 'active' ? 'green' : 'red'}">${u.web_status || 'inactive'}</span></td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${fmtDT(u.last_login)}</td>
+      <td style="text-align:center">
+        ${(IS_ADMIN || IS_ORG_ADMIN) ? `<button class="btn btn-secondary btn-sm" onclick='openEdit(${JSON.stringify(u).replace(/'/g, "&#39;")})'>Edit</button>` : '<span style="font-size:11px;color:var(--text3)">-</span>'}
+      </td>
+      <td style="text-align:center">
+        ${(IS_ADMIN || IS_ORG_ADMIN) ? `<button class="btn ${u.status === 'inactive' ? 'btn-primary' : 'btn-danger'} btn-sm" onclick="toggleUserStatus('${u.id}','${u.status || 'active'}')">${u.status === 'inactive' ? 'Enable' : 'Disable'}</button>` : '<span style="font-size:11px;color:var(--text3)">-</span>'}
+      </td>
+      <td style="text-align:center">
+        ${(IS_ADMIN || IS_ORG_ADMIN) ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}','${safeUsername}')">Delete</button>` : '<span style="font-size:11px;color:var(--text3)">-</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadUsers() {
+  try {
+    const r = await fetch('/api/users');
+    if (r.status === 403) {
+      document.getElementById('usersTable').innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">Access denied</td></tr>`;
+      return;
+    }
+    allUsers = await r.json();
+    filterUsers();
+  } catch (e) { }
+}
+
+  function openCreateModal() { document.getElementById('createModal').classList.add('open'); }
+  function closeCreateModal() { document.getElementById('createModal').classList.remove('open'); }
+  function closeModal() { document.getElementById('editModal').classList.remove('open'); }
+
+  function syncEditOrgVisibility() {
+    document.getElementById('editOrgRow').style.display = document.getElementById('editRole').value === 'super_admin' ? 'none' : 'block';
+  }
+
+  function openEdit(u) {
+    document.getElementById('editId').value = u.id;
+    document.getElementById('editUsername').value = u.username || '';
+    document.getElementById('editEmail').value = u.email || '';
+    document.getElementById('editRole').value = u.role || 'organization_viewer';
+    document.getElementById('editOrganization').value = u.organization_id || '';
+    // document.getElementById('editStatus').value = u.status || 'active';
+    document.getElementById('editPassword').value = '';
+    syncEditOrgVisibility();
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  document.getElementById('editModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+  document.getElementById('createModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeCreateModal(); });
+
+  async function createUser() {
+    const payload = {
+      username: document.getElementById('createUsername').value.trim(),
+      email: document.getElementById('createEmail').value.trim(),
+      password: document.getElementById('createPassword').value,
+      organization_id: document.getElementById('createOrganization').value
+    };
+    const r = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const d = await r.json();
+    if (d.success) {
+      flash('User created', 'success');
+      closeCreateModal();
+      document.getElementById('createUsername').value = '';
+      document.getElementById('createEmail').value = '';
+      document.getElementById('createPassword').value = '';
+      loadUsers();
+    } else flash(d.error || 'Unable to create user', 'error');
+  }
+
+  async function saveUser() {
+    const id = document.getElementById('editId').value;
+    const payload = {
+      username: document.getElementById('editUsername').value.trim(),
+      email: document.getElementById('editEmail').value.trim(),
+      role: document.getElementById('editRole').value,
+      // status: document.getElementById('editStatus').value,
+      organization_id: document.getElementById('editOrganization').value,
+      password: document.getElementById('editPassword').value
+    };
+    const r = await fetch(`/api/users/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const d = await r.json();
+    if (d.success) { flash('User updated', 'success'); closeModal(); loadUsers(); }
+    else flash(d.error || 'Error', 'error');
+  }
+
+  async function deleteUser(id, username) {
+    if (!confirm(`Delete user "${username}"?`)) return;
+    const r = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.success) { flash('User deleted', 'success'); loadUsers(); }
+    else flash(d.error || 'Cannot delete user', 'error');
+  }
+
+  async function toggleUserStatus(id, currentStatus) {
+    const newStatus = currentStatus === 'inactive' ? 'active' : 'inactive';
+    const actionName = newStatus === 'active' ? 'enable' : 'disable';
+    if (!confirm(`Are you sure you want to ${actionName} this user?`)) return;
+    const r = await fetch(`/api/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const d = await r.json();
+    if (d.success) {
+      flash(`User ${newStatus === 'active' ? 'enabled' : 'disabled'}`, 'success');
+      loadUsers();
+    } else {
+      flash(d.error || `Cannot ${actionName} user`, 'error');
+    }
+  }
+
+  function fmtDT(iso) {
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  loadOrganizations().then(loadUsers);
+  setInterval(loadUsers, 10000);
+</script>
+{% endblock %}

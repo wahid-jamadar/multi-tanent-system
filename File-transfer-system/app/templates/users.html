@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}User Management - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Access Management</h1>
+    <p class="text-secondary mb-0">Manage user accounts, roles, and platform permissions.</p>
+  </div>
+  <div>
+    <button class="btn btn-primary d-flex align-items-center gap-2 px-3" data-bs-toggle="modal" data-bs-target="#addUserModal">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-plus" viewBox="0 0 16 16">
+        <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a4 4 0 1 1-8 0 4 4 0 0 1 8 0m4 8c0 1-1 1-1 1H1s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C9.516 10.68 8.289 10 6 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+        <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5"/>
+      </svg>
+      Add User
+    </button>
+  </div>
+</div>
+
+<div class="section-panel p-0 overflow-hidden">
+  <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center bg-dark bg-opacity-25">
+    <h2 class="h6 mb-0 fw-bold">Platform Users</h2>
+    <div class="d-flex gap-2">
+      <input type="text" class="form-control form-control-sm bg-dark border-secondary text-white" placeholder="Search users..." style="width: 200px">
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Organization</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Last Login</th>
+          <th>Created</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold border border-primary border-opacity-25" style="width: 40px; height: 40px;">
+                {{ u.username[:1].upper() }}
+              </div>
+              <div>
+                <div class="fw-bold">{{ u.username }}</div>
+                <div class="text-secondary x-small">{{ u.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            {% if u.organization %}
+            <span class="badge bg-dark border border-secondary text-indigo x-small" style="color: #818cf8 !important; border-color: rgba(99,102,241,0.25) !important;">{{ u.organization.name }}</span>
+            {% else %}
+            <span class="badge bg-dark border border-secondary text-secondary x-small">System / Global</span>
+            {% endif %}
+          </td>
+          <td>
+            {% for role in u.roles %}
+            <span class="badge bg-dark border border-secondary text-info x-small">{{ role.name }}</span>
+            {% endfor %}
+          </td>
+          <td>
+            <span class="badge status-{{ 'online' if u.is_active else 'offline' }}">{{ 'Active' if u.is_active else 'Disabled' }}</span>
+          </td>
+          <td>
+            <div class="text-secondary small">
+              {% if u.last_login_at %}
+                <span class="local-time" data-utc="{{ u.last_login_at.isoformat() ~ 'Z' }}" data-format="datetime">{{ u.last_login_at.strftime('%Y-%m-%d %H:%M') }}</span>
+              {% else %}
+                Never
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="text-secondary small local-time" data-utc="{{ u.created_at.isoformat() ~ 'Z' }}" data-format="date">{{ u.created_at.strftime('%Y-%m-%d') }}</div>
+          </td>
+          <td class="text-end">
+            <div class="d-flex justify-content-end gap-2">
+              <button class="btn btn-sm btn-dark border-secondary px-3" data-bs-toggle="modal" data-bs-target="#editUserModal{{ u.id }}">Edit</button>
+              <form action="{{ url_for('toggle_user_status', user_id=u.id) }}" method="POST" class="d-inline m-0 p-0">
+                <button type="submit" class="btn btn-sm {{ 'btn-outline-danger' if u.is_active else 'btn-outline-success' }} px-3" {% if u.id == user.id %}disabled{% endif %}>
+                  {{ 'Disable' if u.is_active else 'Enable' }}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% for u in users %}
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal{{ u.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content bg-dark border-secondary shadow-lg" action="{{ url_for('edit_user', user_id=u.id) }}" method="POST">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Edit User: {{ u.username }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-start">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">USERNAME</label>
+            <input type="text" name="username" class="form-control" value="{{ u.username }}" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">EMAIL ADDRESS</label>
+            <input type="email" name="email" class="form-control" value="{{ u.email }}" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">NEW PASSWORD (Leave blank to keep current)</label>
+            <input type="password" name="password" class="form-control">
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">ASSIGN ROLE</label>
+            <select name="role_id" class="form-select bg-dark border-secondary text-white">
+              {% for role in roles %}
+              <option value="{{ role.id }}" {% if u.roles and u.roles[0].id == role.id %}selected{% endif %}>{{ role.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% if not user.organization_id or user_has_role(user, 'Super Admin') %}
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">ASSIGN ORGANIZATION</label>
+            <select name="organization_id" class="form-select bg-dark border-secondary text-white">
+              <option value="">Global / None (Super Admin)</option>
+              {% for org in organizations %}
+              <option value="{{ org.id }}" {% if u.organization_id == org.id %}selected{% endif %}>{{ org.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% else %}
+          <input type="hidden" name="organization_id" value="{{ user.organization_id }}">
+          {% endif %}
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-dark border-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content bg-dark border-secondary shadow-lg" action="{{ url_for('create_user') }}" method="POST">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Create New Account</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">USERNAME</label>
+            <input type="text" name="username" class="form-control" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">EMAIL ADDRESS</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">INITIAL PASSWORD</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">ASSIGN ROLE</label>
+            <select name="role_id" class="form-select bg-dark border-secondary text-white">
+              {% for role in roles %}
+              <option value="{{ role.id }}">{{ role.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% if not user.organization_id or user_has_role(user, 'Super Admin') %}
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">ASSIGN ORGANIZATION</label>
+            <select name="organization_id" class="form-select bg-dark border-secondary text-white">
+              <option value="">Global / None (Super Admin)</option>
+              {% for org in organizations %}
+              <option value="{{ org.id }}">{{ org.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% else %}
+          <input type="hidden" name="organization_id" value="{{ user.organization_id }}">
+          {% endif %}
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-dark border-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary px-4">Create User</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .x-small { font-size: 11px; }
+</style>
+{% endblock %}

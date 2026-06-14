@@ -1,0 +1,160 @@
+# Audit: Browser Console Errors and Leak Prevention
+
+This document provides a security audit of how system errors are currently exposed in the browser console of **BatchHost-Pro** and outlines exactly how to prevent this behavior.
+
+---
+
+## 📊 Summary of Exposed Errors
+
+There are **two main pathways** through which system errors are shown in the browser's console logs:
+1. **Frontend JavaScript Logging (`console.error` and `console.warn`)**: Direct console print commands inside your HTML templates.
+2. **Backend Error Leaks (`str(e)`)**: Flask endpoint routes and global error handlers that return raw Python exception details to the browser in their JSON response payloads. When these requests fail, they leak critical internal database/file info and are printed to the console.
+
+| Location Type | File | Count | Exposure Risk |
+| :--- | :--- | :---: | :--- |
+| **Frontend JS** | [templates/scripts.html](file:///c:/BatchHost-Pro/templates/scripts.html#L206) | 1 | Logs data loading failures |
+| **Frontend JS** | [templates/organizations.html](file:///c:/BatchHost-Pro/templates/organizations.html#L248) | 2 | Logs save/delete org exceptions |
+| **Frontend JS** | [templates/dashboard.html](file:///c:/BatchHost-Pro/templates/dashboard.html#L304) | 1 | Logs general dashboard rendering exceptions |
+| **Frontend JS** | [templates/agents.html](file:///c:/BatchHost-Pro/templates/agents.html#L59) | 1 | Logs agent mapping/load exceptions |
+| **Frontend JS** | [templates/base.html](file:///c:/BatchHost-Pro/templates/base.html#L1263) | 1 | Warns on WebSocket connection failures |
+| **Backend API** | [server.py](file:///c:/BatchHost-Pro/server.py#L159-L164) (Global 500) | *Global* | Exposes **all** unhandled system exceptions (`str(e)`) |
+| **Backend API** | [server.py](file:///c:/BatchHost-Pro/server.py#L1783-L1784) (`/api/logs/export`) | 1 | Exposes file system / XML generation errors |
+| **Backend API** | [server.py](file:///c:/BatchHost-Pro/server.py#L2788-L2790) (`/api/backups/trigger`) | 1 | Exposes archive creation / permission errors |
+
+---
+
+## 🔍 Detailed Breakdown of Locations
+
+### 1. Frontend JavaScript Console Logs (5 Total)
+In your frontend HTML templates, JavaScript `try...catch` blocks log the exact error object directly to the console:
+* **[scripts.html:L206](file:///c:/BatchHost-Pro/templates/scripts.html#L206)**:
+  ```javascript
+  console.error("Error loading data:", e);
+  ```
+* **[organizations.html:L248 & L276](file:///c:/BatchHost-Pro/templates/organizations.html#L248)**:
+  ```javascript
+  console.error(err);
+  ```
+* **[dashboard.html:L304](file:///c:/BatchHost-Pro/templates/dashboard.html#L304)**:
+  ```javascript
+  } catch(e) { console.error(e); }
+  ```
+* **[agents.html:L59](file:///c:/BatchHost-Pro/templates/agents.html#L59)**:
+  ```javascript
+  console.error("Failed to load organizations", e);
+  ```
+* **[base.html:L1263](file:///c:/BatchHost-Pro/templates/base.html#L1263)**:
+  ```javascript
+  console.warn('WSS: Connection failed, retrying...', err.message);
+  ```
+
+### 2. Backend Exception Leaks (3 Locations)
+In your server-side code, raw Python exception messages (`str(e)`) are returned to the client in JSON format, exposing details such as file paths, database structures, or syntax errors:
+
+* **Global 500 Unhandled Exception Handler ([server.py:L159-L164](file:///c:/BatchHost-Pro/server.py#L159-L164))**:
+  ```python
+  @app.errorhandler(500)
+  def handle_internal_server_error(e):
+      import traceback
+      error_msg = f"INTERNAL SERVER ERROR: {str(e)}\n{traceback.format_exc()}"
+      logging.error(error_msg)
+      return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
+  ```
+  > [!WARNING]
+  > Returning `str(e)` inside the global 500 handler means that **any** unexpected backend crash will expose its raw diagnostic message to the browser's Network tab and subsequent console.
+
+* **Log Export Endpoint ([server.py:L1783-L1784](file:///c:/BatchHost-Pro/server.py#L1783-L1784))**:
+  ```python
+  except Exception as e:
+      return jsonify({"error": str(e)}), 500
+  ```
+
+* **Manual Backup Endpoint ([server.py:L2788-L2790](file:///c:/BatchHost-Pro/server.py#L2788-L2790))**:
+  ```python
+  except Exception as e:
+      logging.error(f"Manual backup failed: {e}")
+      return jsonify({"error": str(e)}), 500
+  ```
+
+---
+
+## 🛠️ How Do I Prevent This? (Step-by-Step Guide)
+
+To stop system details from being exposed to the browser console and Network tab, we can implement three secure techniques.
+
+### Step 1: Sanitize Backend Responses (High Priority)
+We should modify the backend to securely record the full error details in the server's local log file (`logs/server.log`) but return a **sanitized, generic error message** to the client.
+
+#### A. Sanitize Global 500 Handler in [server.py](file:///c:/BatchHost-Pro/server.py#L159-L164):
+```diff
+ @app.errorhandler(500)
+ def handle_internal_server_error(e):
+     import traceback
+     error_msg = f"INTERNAL SERVER ERROR: {str(e)}\n{traceback.format_exc()}"
+     logging.error(error_msg)
+-    return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
++    return jsonify({
++        "error": "Internal Server Error", 
++        "message": "An unexpected error occurred. Please contact system administration if the issue persists."
++    }), 500
+```
+
+#### B. Sanitize Specific API Exceptions in [server.py](file:///c:/BatchHost-Pro/server.py):
+For the `/api/logs/export` endpoint:
+```diff
+     except Exception as e:
+-        return jsonify({"error": str(e)}), 500
++        logging.error(f"Logs export failed: {e}")
++        return jsonify({"error": "Failed to export logs. Please check system configurations."}), 500
+```
+
+For the `/api/backups/trigger` endpoint:
+```diff
+     except Exception as e:
+         logging.error(f"Manual backup failed: {e}")
+-        return jsonify({"error": str(e)}), 500
++        return jsonify({"error": "Failed to create manual backup due to a server-side storage issue."}), 500
+```
+
+---
+
+### Step 2: Suppress Console Outputs in Production (Recommended)
+You can intercept and mute all frontend `console` prints in a production environment so that users and attackers cannot inspect logs through their browser consoles.
+
+Add a simple initialization script to [base.html:L1246](file:///c:/BatchHost-Pro/templates/base.html#L1246) (inside the main script block):
+
+```javascript
+// Automatically disable all console statements in production environments
+if (window.location.hostname !== '172.100.31.40' && window.location.hostname !== '172.100.31.40') {
+    console.log = function() {};
+    console.error = function() {};
+    console.warn = function() {};
+    console.info = function() {};
+}
+```
+
+---
+
+### Step 3: Implement Centralized Client-Side Error Logging (Optional)
+If you still need visibility into client-side errors without displaying them to the user, you can create a simple API endpoint in Flask `/api/log_error` and write client-side script errors to the server log instead of printing them locally:
+
+```javascript
+window.onerror = function (message, source, lineno, colno, error) {
+    // Send Javascript error to the server for secure logging
+    fetch('/api/log_error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, source, lineno, colno })
+    });
+    return true; // Prevents the fire of standard browser error message in console
+};
+```
+
+---
+
+### 🚀 What Would You Like to Do?
+
+I can make these changes for you immediately! Let me know if you would like me to:
+1. **Sanitize the backend endpoints** in `server.py` to prevent raw exception leakage.
+2. **Add console suppression** to `base.html` to hide frontend console logs in non-local environments.
+3. **Do both** for full security hardening.

@@ -1,0 +1,28 @@
+agent_token: ""
+agent_uuid: ""
+allowed_paths:
+  - /
+backend_url: https://172.100.30.191:5001
+base_path: /
+bootstrap_token: CHANGE-ME-BOOTSTRAP-TOKEN
+heartbeat_interval: 30
+log_level: INFO
+machine_fingerprint: ""
+server_name: CHANGE-ME-HOSTNAME
+agent:
+  id: ""
+  token: ""
+  name: CHANGE-ME-HOSTNAME
+server:
+  url: https://172.100.30.191:5001
+sync:
+  folders:
+    - /
+  rules: []
+monitoring:
+  heartbeat_interval: 30
+transfer:
+  chunk_size: 1048576
+  retry_limit: 5
+  compression: true
+  encryption: true

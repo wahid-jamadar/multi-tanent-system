@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Operations Dashboard - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-10">
+  <div class="d-flex align-items-center gap-3">
+    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="var(--fb-primary)" viewBox="0 0 16 16">
+        <path d="M8 0a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 12.293V.5A.5.5 0 0 1 8 0z"/>
+        <path d="M1 14a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 14z"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="h3 fw-bold mb-0 text-white">Operations Dashboard</h1>
+      <p class="text-secondary mb-0 small">Live infrastructure status and operations overview.</p>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-primary d-flex align-items-center gap-2 px-3" href="{{ url_for('transfer_page') }}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+      </svg>
+      New Transfer
+    </a>
+  </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="row g-3 mb-4">
+  <div class="col">
+    <a href="{{ url_for('servers_page') }}" class="text-decoration-none">
+      <div class="metric" style="cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+        <span>Connected Servers</span>
+        <strong>{{ stats.servers }}</strong>
+        <div class="position-absolute top-0 end-0 p-3 opacity-25">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zM1 3.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9z"/><path d="M2 5.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5z"/></svg>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{{ url_for('agents_page') }}" class="text-decoration-none">
+      <div class="metric" style="border-bottom: 2px solid var(--fb-success); cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(16, 185, 129, 0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+        <span class="text-success d-flex align-items-center"><span class="live-indicator"></span> Active Agents</span>
+        <strong id="onlineAgents">{{ stats.online_agents }}</strong>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{{ url_for('queue_operations_page') }}" class="text-decoration-none">
+      <div class="metric" style="border-bottom: 2px solid var(--fb-info); cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(13, 202, 240, 0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+        <span class="text-info">Queue Operations</span>
+        <strong>{{ stats.queued_jobs }}</strong>
+      </div>
+    </a>
+  </div>
+
+  <div class="col">
+    <a href="{{ url_for('alerts_page') }}" class="text-decoration-none">
+      <div class="metric" style="border-bottom: 2px solid {{ 'var(--fb-danger)' if stats.open_alerts > 0 else 'var(--fb-success)' }}; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+        <span class="{{ 'text-danger' if stats.open_alerts > 0 else 'text-success' }}">System Health</span>
+        <strong class="{{ 'text-danger' if stats.open_alerts > 0 else 'text-white' }}">{{ stats.open_alerts }} Alerts</strong>
+      </div>
+    </a>
+  </div>
+</div>
+<div class="row g-4 mb-4">
+  <div class="col-12">
+  <!-- Recent Jobs -->
+    <section class="section-panel p-0 overflow-hidden h-100">
+      <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center" style="background: rgba(15, 23, 42, 0.4);">
+        <h2 class="h6 mb-0 fw-bold d-flex align-items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="var(--fb-primary)" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+          Recent Job Activity
+        </h2>
+        <a href="{{ url_for('job_history_page') }}" class="btn btn-sm btn-dark px-3 py-1 text-decoration-none small fw-medium">View All →</a>
+      </div>
+      <div class="table-responsive" style="max-height: 400px;">
+        <table class="table align-middle m-0">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Destination</th>
+              <th>Job ID</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Started</th>
+              <th class="text-end">Completed</th>
+            </tr>
+          </thead>
+          <tbody id="jobsTable">
+            {% for job in recent_jobs %}
+            <tr data-job="{{ job.job_uuid }}">
+              <td>
+                <div class="d-flex flex-column">
+                  <span class="text-white fw-semibold small truncate" style="max-width: 180px;" title="{{ job.display_source_server.name if job.display_source_server else 'Local' }}">
+                    <i class="bi bi-server text-primary me-1 small"></i>{{ job.display_source_server.name if job.display_source_server else 'Local' }}
+                  </span>
+                  <span class="text-secondary font-monospace x-small truncate mt-1" style="max-width: 180px;" title="{{ job.display_source_path }}">
+                    {{ job.display_source_path }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <div class="d-flex flex-column">
+                  <span class="text-white fw-semibold small truncate" style="max-width: 180px;" title="{{ job.display_destination_server.name if job.display_destination_server else 'Local' }}">
+                    <i class="bi bi-server text-info me-1 small"></i>{{ job.display_destination_server.name if job.display_destination_server else 'Local' }}
+                  </span>
+                  <span class="text-secondary font-monospace x-small truncate mt-1" style="max-width: 180px;" title="{{ job.display_destination_path or '' }}">
+                    {{ job.display_destination_path or '-' }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <div class="font-monospace small text-primary fw-semibold" title="{{ job.job_uuid }}">{{ job.job_uuid[:8] }}</div>
+              </td>
+              <td>
+                <span class="badge" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--fb-muted);">
+                  {% if job.job_type == 'sync' %}
+                    synchronization
+                  {% elif job.job_type == 'copy' %}
+                    copy-paste
+                  {% elif job.job_type == 'move' %}
+                    cut-paste
+                  {% else %}
+                    {{ job.job_type }}
+                  {% endif %}
+                </span>
+              </td>
+              <td>
+                <span class="badge status-badge status-{{ job.status }}">{{ job.status|capitalize }}</span>
+              </td>
+              <td style="width: 200px;">
+                <div class="d-flex align-items-center gap-2">
+                  {% set progress = 100 if job.status == 'success' else ((job.transferred_bytes / job.total_bytes * 100) if job.total_bytes else 0) %}
+                  <div class="progress flex-grow-1" style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                    <div class="progress-bar bg-primary" style="width: {{ progress }}%; border-radius: 4px; box-shadow: 0 0 10px var(--fb-primary-glow);"></div>
+                  </div>
+                  <span class="text-secondary x-small fw-semibold progress-text" style="width: 30px;">{{ progress|round|int }}%</span>
+                </div>
+              </td>
+              <td class="text-secondary small font-monospace local-time started-cell" data-utc="{{ job.started_at.isoformat() ~ 'Z' if job.started_at else '' }}" data-format="datetime-seconds-twoline">
+                {% if job.started_at %}
+                  <div>{{ job.started_at.strftime('%H:%M:%S') }}</div>
+                  <div>{{ job.started_at.strftime('%d-%m-%Y') }}</div>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td class="text-end text-secondary small font-monospace local-time completed-cell" data-utc="{{ job.completed_at.isoformat() ~ 'Z' if job.completed_at else '' }}" data-format="datetime-seconds-twoline">
+                {% if job.completed_at %}
+                  <div>{{ job.completed_at.strftime('%H:%M:%S') }}</div>
+                  <div>{{ job.completed_at.strftime('%d-%m-%Y') }}</div>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            {% if not recent_jobs %}
+            <tr>
+              <td colspan="8" class="text-center py-5 text-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="opacity-25 mb-3" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg>
+                <div class="fw-medium">No recent activity detected</div>
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+  .x-small { font-size: 11px; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+{% endblock %}

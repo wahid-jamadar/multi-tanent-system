@@ -1,0 +1,18 @@
+﻿[Unit]
+Description=BatchHost-Pro Agent Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/batchhost-pro-agent
+ExecStart=/bin/bash /opt/batchhost-pro-agent/batchhost-pro_agent.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=batchhost-pro-agent
+
+[Install]
+WantedBy=multi-user.target

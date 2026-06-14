@@ -1,0 +1,26 @@
+<service>
+  <id>FileBridgeAgent</id>
+  <name>FileBridge Agent</name>
+  <description>FileBridge distributed file synchronization and monitoring agent.</description>
+  
+  <executable>%BASE%\FileBridgeAgent.exe</executable>
+  <arguments></arguments>
+  <workingdirectory>%BASE%</workingdirectory>
+  
+  <env name="FILEBRIDGE_SERVICE" value="1"/>
+
+  <!-- Log configuration for WinSW wrapper -->
+  <logpath>%BASE%\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold> <!-- 10 MB per file -->
+    <keepFiles>8</keepFiles>
+  </log>
+
+  <!-- Restart policy on crash/failure -->
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="30 sec"/>
+  <onfailure action="restart" delay="60 sec"/>
+  <resetfailure>1 hour</resetfailure>
+  
+  <startmode>Automatic</startmode>
+</service>

@@ -1,0 +1,277 @@
+# BatchHost-Pro — API Security Audit Report
+
+> **Audited:** `server.py` (3,066 lines) + `backend/tracking.py` (523 lines)
+> **Date:** 2026-05-18
+> **Scope:** Authentication, authorization, and suspicious patterns across all routes
+
+---
+
+## Executive Summary
+
+The codebase employs three authentication guards: `login_required`, `admin_required`, and `agent_token_required`. Most routes are properly protected. However, the audit uncovered **3 critical**, **5 high**, and **4 medium** severity findings — including **unauthenticated endpoints that should be protected** and a **debug route left in production code**.
+
+---
+
+## Authentication Guard Inventory
+
+| Decorator | Purpose | Checks |
+|---|---|---|
+| `login_required` | Web UI user session | Session cookie, expiry, account active, org active, force-logout |
+| `admin_required` | Super Admin only | All of `login_required` + `role == "super_admin"` |
+| `agent_token_required` | Agent API calls | `X-Agent-Token` header or JSON `token` field |
+
+---
+
+## Route-by-Route Audit
+
+### ✅ Properly Protected Routes
+
+| Route | Method | Guard | Notes |
+|---|---|---|---|
+| `/dashboard` | GET | `@login_required` | ✅ |
+| `/organizations` | GET | `@admin_required` | ✅ |
+| `/agents` | GET | `@login_required` | ✅ |
+| `/agent-management` | GET | `@login_required` | ✅ + viewer redirect |
+| `/scripts` | GET | `@login_required` | ✅ |
+| `/script-management` | GET | `@login_required` | ✅ + viewer redirect |
+| `/logs` | GET | `@login_required` | ✅ |
+| `/alerts` | GET | `@login_required` | ✅ |
+| `/backups` | GET | `@login_required` | ✅ + viewer redirect |
+| `/settings` | GET | `@admin_required` | ✅ |
+| `/users` | GET | `@login_required` | ✅ |
+| `/admin_logs` | GET | `@admin_required` | ✅ |
+| `/profile` | GET | `@login_required` | ✅ |
+| `/api/auth/presence` | POST | `@login_required` | ✅ |
+| `/api/auth/extend-session` | POST | `@login_required` | ✅ |
+| `/api/dashboard/stats` | GET | `@login_required` | ✅ |
+| `/api/executions` | GET | `@login_required` | ✅ |
+| `/api/agents` | GET | `@login_required` | ✅ |
+| `/api/agents/<id>` | GET | `@login_required` | ✅ + org check |
+| `/api/agents/<id>` | DELETE | `@login_required` | ✅ + org check |
+| `/api/agents/<id>` | PATCH | `@login_required` | ✅ + org check |
+| `/api/scripts` | GET | `@login_required` | ✅ |
+| `/api/scripts` | POST | `@login_required` | ✅ + org check |
+| `/api/scripts/<id>/run` | POST | `@login_required` | ✅ + org check |
+| `/api/scripts/<id>` | PATCH | `@login_required` | ✅ + org check |
+| `/api/scripts/<id>` | DELETE | `@login_required` | ✅ + org check |
+| `/api/alerts` | GET | `@login_required` | ✅ |
+| `/api/alerts/<id>` | DELETE | `@login_required` | ✅ + org check |
+| `/api/logs/<id>` | GET | `@login_required` | ✅ + `ensure_record_access` |
+| `/api/logs/export` | GET | `@login_required` | ✅ |
+| `/api/backups` | GET | `@login_required` | ✅ + viewer check |
+| `/api/backups/schedule` | GET | `@admin_required` | ✅ |
+| `/api/backups/<name>/download` | GET | `@login_required` | ✅ + org filter + path traversal check |
+| `/api/backups/trigger` | POST | `@login_required` | ✅ + viewer check |
+| `/api/system_logs` | GET | `@login_required` | ✅ |
+| `/api/settings` | GET | `@admin_required` | ✅ |
+| `/api/settings` | POST | `@admin_required` | ✅ |
+| `/api/users` | GET | `@login_required` | ✅ + org filter |
+| `/api/users` | POST | `@login_required` | ✅ + viewer check |
+| `/api/users/<id>` | PATCH | `@login_required` | ✅ + org check |
+| `/api/users/<id>` | DELETE | `@login_required` | ✅ + self-delete prevented |
+| `/api/organizations` | GET | `@admin_required` | ✅ |
+| `/api/organizations` | POST | `@admin_required` | ✅ |
+| `/api/organizations/<id>` | PATCH | `@admin_required` | ✅ |
+| `/api/organizations/<id>` | DELETE | `@admin_required` | ✅ |
+| `/api/admin_logs` | GET | `@admin_required` | ✅ |
+| `/api/admin_logs/clear` | DELETE | `@admin_required` | ✅ |
+
+---
+
+## 🔴 CRITICAL Findings
+
+### 1. `/test_run` — Debug Route With NO Authentication (Line 2341)
+
+```python
+@app.route("/test_run")
+def test_run():
+    script_id = "e4f8d9b1-2a3b-4c5d-9e6f-7g8h9i0j1k2l"
+    ...
+```
+
+> [!CAUTION]
+> **This route has ZERO authentication.** Any unauthenticated external attacker can trigger script execution on a target agent by visiting `/test_run`. It hardcodes a script ID and queues a `RUN_SCRIPT` command, mutating `SCRIPTS_FILE` on disk. This is a **remote code execution vector** if the script ID exists.
+
+**Recommendation:** Remove this route entirely, or at minimum guard it with `@admin_required`.
+
+---
+
+### 2. `/api/agent/register` — Unauthenticated Agent Registration (Line 1790)
+
+```python
+@app.route("/api/agent/register", methods=["POST"])
+def agent_register():
+```
+
+> [!CAUTION]
+> **Any anonymous network client can register a new agent** by sending a POST with an `agent_id` and `hostname`. A newly registered agent receives a valid `token`, which then grants full access to `/api/agent/heartbeat`, `/api/agent/script-event`, and `/api/agent/script-status`. This means an attacker can:
+> 1. Register a rogue agent
+> 2. Use the returned token to inject fake script status events, create alerts, and pollute execution data
+> 3. If a device_key or hostname match is found, **hijack an existing agent's token** (line 1857-1861)
+
+**Recommendation:** Require a shared pre-registration secret, API key, or `@admin_required` approval flow. At minimum, add rate limiting and a registration secret/passphrase.
+
+---
+
+### 3. `/api/auth/presence/inactive` — Unauthenticated Session Manipulation (Line 1781)
+
+```python
+@app.route("/api/auth/presence/inactive", methods=["POST"])
+def api_presence_inactive():
+    clear_web_presence()
+    return ("", 204)
+```
+
+> [!CAUTION]
+> **No authentication guard at all.** While it only calls `clear_web_presence()` which operates on the caller's session cookie, the lack of any decorator means:
+> - It bypasses all session expiry checks
+> - It bypasses the account-active and organization-active checks
+> - It can be called by disabled/suspended users
+> - A crafted request from a session that was force-logged-out can still hit this endpoint
+
+**Recommendation:** Add `@login_required` decorator.
+
+---
+
+## 🟠 HIGH Severity Findings
+
+### 4. Agent Token is Returned to Existing Device Matches Without Verification (Line 1826, 1857)
+
+When an agent re-registers, the server returns the **existing agent's token** if:
+- The `device_key` matches (line 1806–1808), OR
+- The `hostname` + `os_type` match and no `device_key` exists (line 1809–1812), OR
+- A legacy device match is found (line 1831–1842)
+
+This means **anyone who knows an agent's hostname and OS type can steal its auth token**. The `device_key` is also client-supplied, so an attacker can spoof it if they know the value.
+
+**Recommendation:** Require cryptographic proof of identity (e.g., a machine certificate or pre-shared registration secret), not just hostname matching.
+
+---
+
+### 5. Weak Password Hashing — SHA-256 Without Salt (Line 659–660)
+
+```python
+def hash_pw(pw):
+    return hashlib.sha256(pw.encode()).hexdigest()
+```
+
+> [!WARNING]
+> SHA-256 is a fast hash — unsuitable for password storage. There is **no salt**, so identical passwords produce identical hashes, enabling rainbow table attacks. The default admin password is `admin123` (line 548).
+
+**Recommendation:** Use `bcrypt`, `argon2`, or `scrypt` with automatic salting. Force admin password change on first login.
+
+---
+
+### 6. Hardcoded Default Admin Credentials (Line 548)
+
+```python
+admin_pw = hashlib.sha256("admin123".encode()).hexdigest()
+```
+
+> [!WARNING]
+> The default admin password `admin123` is hardcoded. If `users.json` doesn't exist, it's auto-created with these credentials. There is no forced password change on first login.
+
+**Recommendation:** Generate a random password at init and print it to the console, or require first-login password setup.
+
+---
+
+### 7. WebSocket `cors_allowed_origins="*"` (Line 39)
+
+```python
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+```
+
+> [!WARNING]
+> All origins are allowed for WebSocket connections. This means any malicious webpage can open a WebSocket to your server and receive real-time execution data, agent status, and script updates for any organization, without any origin verification.
+
+**Recommendation:** Restrict `cors_allowed_origins` to your actual domain(s).
+
+---
+
+### 8. Debug Mode Enabled in Production (Line 3064–3066)
+
+```python
+socketio.run(app, host="0.0.0.0", port=5000, debug=True, ...)
+```
+
+> [!WARNING]
+> `debug=True` enables the Werkzeug debugger, which exposes an interactive Python console on error pages. This is a **direct remote code execution vector** if the server crashes. It also auto-reloads on file changes.
+
+**Recommendation:** Set `debug=False` in production. Use environment variables to control debug mode.
+
+---
+
+## 🟡 MEDIUM Severity Findings
+
+### 9. User Creation Allows `organization_admin` to Create Users Without Role Restrictions (Line 2757)
+
+At `/api/users` POST (line 2786), new users are always created as `organization_viewer`. However, there is no check preventing an `organization_admin` from then immediately calling PATCH to upgrade the user's role to `organization_admin` — since line 2950 only blocks `super_admin` and `organization_admin` role changes for non-super-admins, but this check has a subtle logic issue:
+
+```python
+if not is_admin(current_usr) and data["role"] in ["super_admin", "organization_admin"]:
+    return jsonify({"error": "Forbidden: Only Super Admin can change roles"}), 403
+```
+
+This correctly blocks non-super-admins from assigning `organization_admin`, but an `organization_admin` **can** set a user's role to `organization_viewer` or any other non-listed role string. Since there's no allowlist validation on the `role` field, arbitrary role strings could be injected (e.g., `"role": "god_mode"`).
+
+**Recommendation:** Add a role allowlist: `{"super_admin", "organization_admin", "organization_viewer"}`. Validate against it.
+
+---
+
+### 10. Log Admin Action Leaks Password Changes in Audit Log (Line 2963)
+
+```python
+log_admin_action(admin, "Update", "Users", user.get("username", user_id),
+                 new_value=str(data), ip_address=request.remote_addr)
+```
+
+When a user's password is changed via PATCH, `str(data)` includes the raw password in the admin log, since the password is hashed *after* logging. The raw JSON payload `data` still contains the plaintext password at this point.
+
+**Recommendation:** Redact `password` from `data` before logging: `{k: v for k, v in data.items() if k != "password"}`.
+
+---
+
+### 11. No CSRF Protection on State-Changing Endpoints
+
+Flask session cookies alone are used for authentication. There is no CSRF token verification on POST/PATCH/DELETE endpoints. A malicious webpage could forge authenticated requests using the user's session cookie.
+
+**Recommendation:** Implement CSRF tokens (e.g., `Flask-WTF` or custom `X-CSRF-Token` header validation).
+
+---
+
+### 12. Agent Heartbeat Token Check Outside DATA_LOCK Before Critical Operations (Line 1887)
+
+The token is checked inside `DATA_LOCK` (line 1890–1892), which is correct. However, the heartbeat endpoint then broadcasts WebSocket events *outside* the lock (line 1915–1928), using `agent` data that was loaded inside the lock. While not a direct security issue, this is a TOCTOU (time-of-check-time-of-use) pattern that could cause stale data broadcasts under concurrent load.
+
+---
+
+## ✅ Positive Security Observations
+
+1. **Session management is thorough** — expiry, force-logout, presence tracking, and inactive-account blocking are all properly implemented in `login_required` and `admin_required`.
+2. **Organization-level data isolation** (`filter_by_org`, `ensure_record_access`) is consistently applied across all data-returning endpoints.
+3. **Path traversal prevention** on backup downloads (line 2616): `".." in name or "/" in name or "\\" in name`.
+4. **Password is stripped from API responses** (line 2751): `{k: v for k, v in u.items() if k != "password"}`.
+5. **Agent tokens are stripped from agent list API** (line 2156): `"token": None`.
+6. **SMTP password is masked** in settings GET response (line 2718).
+7. **Admin actions are comprehensively logged** with IP addresses.
+8. **Atomic file writes** with `os.replace()` (line 140) prevent data corruption.
+9. **Request/response logging** with password field redaction (line 102).
+
+---
+
+## Summary of Required Actions
+
+| Priority | Finding | Action |
+|---|---|---|
+| 🔴 CRITICAL | `/test_run` unauthenticated | **Remove or protect immediately** |
+| 🔴 CRITICAL | `/api/agent/register` unauthenticated | Add registration secret/key |
+| 🔴 CRITICAL | `/api/auth/presence/inactive` unprotected | Add `@login_required` |
+| 🟠 HIGH | Agent token theft via hostname spoofing | Add cryptographic identity verification |
+| 🟠 HIGH | SHA-256 password hashing, no salt | Migrate to bcrypt/argon2 |
+| 🟠 HIGH | Hardcoded `admin123` password | Generate random + force change |
+| 🟠 HIGH | WebSocket CORS `*` | Restrict to actual origins |
+| 🟠 HIGH | `debug=True` in production | Set `debug=False` |
+| 🟡 MEDIUM | No role field allowlist | Validate role values |
+| 🟡 MEDIUM | Password logged in admin audit | Redact before logging |
+| 🟡 MEDIUM | No CSRF protection | Add CSRF tokens |
+| 🟡 MEDIUM | TOCTOU on heartbeat broadcasts | Minor; document as known |

@@ -1,0 +1,693 @@
+{% extends "base.html" %}
+{% set active_page = "agent-install" %}
+{% block title %}Agent Installation{% endblock %}
+{% block page_title %}Agent Installation{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Download Cards ── */
+  .dl-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .dl-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .dl-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 12px 12px 0 0;
+  }
+  .dl-card.windows::before { background: linear-gradient(90deg, #0078D4, #00BCF2); }
+  .dl-card.linux::before   { background: linear-gradient(90deg, #F4A21F, #F97316); }
+  .dl-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+  }
+  .dl-card.windows:hover { border-color: rgba(0,120,212,0.45); }
+  .dl-card.linux:hover   { border-color: rgba(244,162,31,0.45); }
+
+  .dl-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .dl-os-icon {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .dl-card.windows .dl-os-icon { background: rgba(0,120,212,0.12); border: 1px solid rgba(0,120,212,0.25); }
+  .dl-card.linux   .dl-os-icon { background: rgba(244,162,31,0.12); border: 1px solid rgba(244,162,31,0.25); }
+
+  .dl-title { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+  .dl-subtitle { font-size: 12px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+
+  .dl-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .dl-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600;
+    font-family: var(--mono);
+    padding: 4px 10px;
+    border-radius: 6px;
+    color: var(--text2);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+  }
+  .dl-tag.win  { color: #00BCF2; background: rgba(0,120,212,0.08); border-color: rgba(0,120,212,0.2); }
+  .dl-tag.lin  { color: #F4A21F; background: rgba(244,162,31,0.08); border-color: rgba(244,162,31,0.2); }
+
+  .dl-includes {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.6;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    flex: 1;
+  }
+  .dl-includes ul { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+  .dl-includes li::before { content: '╴ '; color: var(--text3); }
+
+  .btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--sans);
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    width: 100%;
+    justify-content: center;
+  }
+  .btn-download.win-btn { background: linear-gradient(135deg, #0078D4, #005A9E); color: #fff; }
+  .btn-download.win-btn:hover { background: linear-gradient(135deg, #1090F0, #0078D4); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,120,212,0.35); }
+  .btn-download.lin-btn { background: linear-gradient(135deg, #F4A21F, #D97706); color: #fff; }
+  .btn-download.lin-btn:hover { background: linear-gradient(135deg, #FBBF24, #F4A21F); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(244,162,31,0.35); }
+
+  /* ── Installation Guide ── */
+  .guide-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .guide-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg3);
+  }
+  .guide-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .guide-subtitle { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
+  .tab-switcher {
+    display: flex;
+    gap: 4px;
+  }
+  .tab-btn {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    background: var(--bg2);
+    transition: all 0.2s ease;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab-btn.active.win { background: rgba(0,120,212,0.14); color: #00BCF2; border-color: rgba(0,120,212,0.35); }
+  .tab-btn.active.lin { background: rgba(244,162,31,0.14); color: #F4A21F; border-color: rgba(244,162,31,0.35); }
+  .tab-btn:hover:not(.active) { background: var(--bg3); color: var(--text); }
+
+  /* Tab panes */
+  .tab-pane { display: none; padding: 28px 24px; }
+  .tab-pane.active { display: block; }
+
+  /* Steps */
+  .install-steps { display: flex; flex-direction: column; gap: 28px; }
+
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+    font-family: var(--mono);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-num.win { background: rgba(0,120,212,0.15); color: #00BCF2; border: 1px solid rgba(0,120,212,0.28); }
+  .step-num.lin { background: rgba(244,162,31,0.15); color: #F4A21F; border: 1px solid rgba(244,162,31,0.28); }
+
+  .step-body { flex: 1; min-width: 0; }
+  .step-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .step-desc { font-size: 12.5px; color: var(--text2); line-height: 1.6; margin-bottom: 10px; }
+
+  /* Code block */
+  .code-wrap { position: relative; }
+  .code-block {
+    background: #0D1117;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #c9d1d9;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.65;
+  }
+  .code-block .kw  { color: #ff7b72; }
+  .code-block .str { color: #a5d6ff; }
+  .code-block .cmt { color: #8b949e; font-style: italic; }
+  .code-block .url { color: #79c0ff; }
+  .code-block .cmd { color: #d2a8ff; }
+  .code-block .val { color: #ffa657; }
+
+  .copy-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #8b949e;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.12); color: #c9d1d9; }
+  .copy-btn.copied { color: #3fb950; border-color: rgba(63,185,80,0.35); background: rgba(63,185,80,0.1); }
+
+  /* Note callout */
+  .note-box {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.55;
+    margin-top: 8px;
+  }
+  .note-box.info { background: rgba(59,130,246,0.09); border: 1px solid rgba(59,130,246,0.22); color: #93c5fd; }
+  .note-box.warn { background: rgba(245,158,11,0.09); border: 1px solid rgba(245,158,11,0.22); color: #fcd34d; }
+  .note-box.ok   { background: rgba(34,197,94,0.09);  border: 1px solid rgba(34,197,94,0.22);  color: #86efac; }
+
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  @media (max-width: 860px) {
+    .dl-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-heading">Agent Installation</div>
+    <div class="page-subtitle">Download the BatchHost-Pro agent and follow the setup guide for your target OS</div>
+  </div>
+</div>
+
+<!-- ─── Download Cards ─────────────────────────────────────────────── -->
+<div class="dl-grid">
+
+  <!-- Windows -->
+  <div class="dl-card windows">
+    <div class="dl-header">
+      <div class="dl-os-icon">🪟</div>
+      <div>
+        <div class="dl-title">Windows Agent</div>
+        <div class="dl-subtitle">batchhost-agent-windows.zip · 7.4 MB</div>
+      </div>
+    </div>
+    <div class="dl-meta">
+      <span class="dl-tag win">Windows 10 / 11 / Server 2019+</span>
+      <span class="dl-tag">Python 3.8+</span>
+      <span class="dl-tag">PowerShell 5+</span>
+    </div>
+    <div class="dl-includes">
+      <strong style="color:var(--text);font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Package Contents</strong>
+      <ul style="margin-top:8px;">
+        <li>agent_runtime.py — core agent runtime</li>
+        <li>batchhost-pro_agent.bat — launcher / heartbeat script</li>
+        <li>batchhost-agent-service.exe — Windows service wrapper</li>
+        <li>batchhost-agent-service.xml — service configuration</li>
+      </ul>
+    </div>
+    <a href="/downloads/batchhost-agent-windows.zip" class="btn-download win-btn" id="btn-dl-win">
+      ⬇ Download Windows Agent
+    </a>
+  </div>
+
+  <!-- Linux -->
+  <div class="dl-card linux">
+    <div class="dl-header">
+      <div class="dl-os-icon">🐧</div>
+      <div>
+        <div class="dl-title">Linux Agent</div>
+        <div class="dl-subtitle">batchhost-agent-linux.zip · ~10 KB</div>
+      </div>
+    </div>
+    <div class="dl-meta">
+      <span class="dl-tag lin">RHEL / CentOS / Ubuntu / Debian</span>
+      <span class="dl-tag">Python 3.8+</span>
+      <span class="dl-tag">systemd</span>
+    </div>
+    <div class="dl-includes">
+      <strong style="color:var(--text);font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Package Contents</strong>
+      <ul style="margin-top:8px;">
+        <li>agent_runtime.py — core agent runtime</li>
+        <li>batchhost-pro_agent.sh — launcher / heartbeat script</li>
+        <li>batchhost-pro-agent.service — systemd unit file</li>
+      </ul>
+    </div>
+    <a href="/downloads/batchhost-agent-linux.zip" class="btn-download lin-btn" id="btn-dl-lin">
+      ⬇ Download Linux Agent
+    </a>
+  </div>
+
+</div>
+
+<!-- ─── Installation Guide ────────────────────────────────────────── -->
+<div class="guide-card">
+  <div class="guide-header">
+    <div>
+      <div class="guide-title">Installation Guide</div>
+      <div class="guide-subtitle">Step-by-step instructions for setting up the agent as a persistent background service</div>
+    </div>
+    <div class="tab-switcher">
+      <button class="tab-btn active win" id="tab-win-btn" onclick="switchTab('windows')">🪟 Windows</button>
+      <button class="tab-btn lin" id="tab-lin-btn" onclick="switchTab('linux')">🐧 Linux</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ WINDOWS GUIDE ══════════════ -->
+  <div class="tab-pane active" id="tab-windows">
+    <div class="install-steps">
+
+      <div class="step">
+        <div class="step-num win">1</div>
+        <div class="step-body">
+          <div class="step-title">Prerequisites</div>
+          <div class="step-desc">
+            Ensure <strong>Python 3.8+</strong> is installed and available on the system PATH. Run the following to verify:
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="win-code-1">python --version
+<span class="cmt"># Expected: Python 3.x.x</span>
+pip install psutil requests</pre>
+            <button class="copy-btn" onclick="copyCode('win-code-1', this)">Copy</button>
+          </div>
+          <div class="note-box info" style="margin-top:10px;">
+            ℹ The agent can also run without pip packages using the built-in <strong>batchhost-agent-service.exe</strong> wrapper — which bundles its own runtime.
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="step">
+        <div class="step-num win">2</div>
+        <div class="step-body">
+          <div class="step-title">Extract &amp; Place Files</div>
+          <div class="step-desc">
+            Download the Windows ZIP, then extract it to a permanent location accessible by the SYSTEM account.
+            The recommended path is:
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="win-code-2"><span class="cmt"># Recommended installation path</span>
+<span class="val">C:\BatchHost-Pro-Agent\</span>
+
+<span class="cmt"># Create the directory (run as Administrator)</span>
+mkdir C:\BatchHost-Pro-Agent
+
+<span class="cmt"># Copy contents of batchhost-agent-windows\ into it</span>
+xcopy /E /I batchhost-agent-windows C:\BatchHost-Pro-Agent</pre>
+            <button class="copy-btn" onclick="copyCode('win-code-2', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="step">
+        <div class="step-num win">3</div>
+        <div class="step-body">
+          <div class="step-title">Configure the Server URL</div>
+          <div class="step-desc">
+            Open <code style="font-family:var(--mono);color:var(--accent);background:var(--bg3);padding:1px 6px;border-radius:4px;">batchhost-pro_agent.bat</code>
+            in Notepad and verify the server URL is set correctly:
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="win-code-3"><span class="cmt">:: Line ~62 in batchhost-pro_agent.bat</span>
+<span class="kw">set</span> <span class="val">SERVER_URL</span>=<span class="url">https://172.100.30.191:5000</span></pre>
+            <button class="copy-btn" onclick="copyCode('win-code-3', this)">Copy</button>
+          </div>
+          <div class="note-box warn">
+            ⚠ If you have configured BatchHost-Pro on a different IP or port, update this value accordingly before starting the agent.
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="step">
+        <div class="step-num win">4</div>
+        <div class="step-body">
+          <div class="step-title">Install as a Windows Service (recommended for servers)</div>
+          <div class="step-desc">
+            Use the included <code style="font-family:var(--mono);color:var(--accent);background:var(--bg3);padding:1px 6px;border-radius:4px;">batchhost-agent-service.exe</code>
+            (WinSW wrapper) to register the agent as a proper Windows Service that auto-starts with the OS and restarts on failure.
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="win-code-4c"><span class="cmt"># Open PowerShell as Administrator in the agent folder:</span>
+cd C:\BatchHost-Pro-Agent
+
+<span class="cmt"># Install the service:</span>
+<span class="cmd">.\batchhost-agent-service.exe install</span>
+
+<span class="cmt"># Start the service:</span>
+<span class="cmd">.\batchhost-agent-service.exe start</span>
+
+<span class="cmt"># Verify it is running:</span>
+<span class="cmd">Get-Service -Name "BatchHost-Pro_Agent"</span>
+
+<span class="cmt"># To stop / uninstall later:</span>
+<span class="cmd">.\batchhost-agent-service.exe stop</span>
+<span class="cmd">.\batchhost-agent-service.exe uninstall</span></pre>
+            <button class="copy-btn" onclick="copyCode('win-code-4c', this)">Copy</button>
+          </div>
+          <div class="note-box ok">
+            ✓ The service is configured to restart automatically on failure (10s then 30s delays) and starts with Windows boot.
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="step">
+        <div class="step-num win">5</div>
+        <div class="step-body">
+          <div class="step-title">Verify Registration</div>
+          <div class="step-desc">
+            After starting, the agent registers automatically with <strong>https://172.100.30.191:5000</strong>.
+            Within 30 seconds you should see it appear as <span class="badge green" style="font-size:11px;">Online</span> in the BatchHost-Pro <a href="/agents" style="color:var(--accent)">Agents</a> page.
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="win-code-5"><span class="cmt"># Check agent logs (from cmd/PowerShell):</span>
+type "%ProgramData%\BatchHost-Pro\Agent\logs\agent.log"
+
+<span class="cmt"># Or if using the service:</span>
+type "C:\BatchHost-Pro-Agent\logs\BatchHost-Pro_Agent.out.log"</pre>
+            <button class="copy-btn" onclick="copyCode('win-code-5', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /tab-windows -->
+
+
+  <!-- ══════════════ LINUX GUIDE ══════════════ -->
+  <div class="tab-pane" id="tab-linux">
+    <div class="install-steps">
+
+      <div class="step">
+        <div class="step-num lin">1</div>
+        <div class="step-body">
+          <div class="step-title">Prerequisites</div>
+          <div class="step-desc">
+            Ensure <strong>Python 3.8+</strong>, <strong>curl</strong>, and <strong>bash</strong> are installed.
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="lin-code-1"><span class="cmt"># RHEL / CentOS / Rocky Linux</span>
+<span class="cmd">sudo dnf install -y python3 python3-pip curl</span>
+
+<span class="cmt"># Ubuntu / Debian</span>
+<span class="cmd">sudo apt-get install -y python3 python3-pip curl</span>
+
+<span class="cmt"># Verify</span>
+python3 --version && curl --version | head -1</pre>
+            <button class="copy-btn" onclick="copyCode('lin-code-1', this)">Copy</button>
+          </div>
+          <div class="code-wrap" style="margin-top:10px;">
+            <pre class="code-block" id="lin-code-1b"><span class="cmt"># Install required Python packages</span>
+pip3 install psutil requests</pre>
+            <button class="copy-btn" onclick="copyCode('lin-code-1b', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="step">
+        <div class="step-num lin">2</div>
+        <div class="step-body">
+          <div class="step-title">Extract &amp; Place Files</div>
+          <div class="step-desc">
+            Upload the Linux ZIP to your server, then extract it to the recommended installation directory:
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="lin-code-2"><span class="cmt"># Create install directory</span>
+<span class="cmd">sudo mkdir -p /opt/batchhost-pro-agent</span>
+
+<span class="cmt"># Extract the ZIP (if unzip is available):</span>
+<span class="cmd">sudo unzip batchhost-agent-linux.zip -d /opt/</span>
+
+<span class="cmt"># Or using Python:</span>
+<span class="cmd">sudo python3 -c "import zipfile; zipfile.ZipFile('batchhost-agent-linux.zip').extractall('/opt/')"</span>
+
+<span class="cmt"># Set correct permissions</span>
+<span class="cmd">sudo chmod +x /opt/batchhost-pro-agent/batchhost-pro_agent.sh</span>
+<span class="cmd">sudo chmod +x /opt/batchhost-pro-agent/agent_runtime.py</span></pre>
+            <button class="copy-btn" onclick="copyCode('lin-code-2', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="step">
+        <div class="step-num lin">3</div>
+        <div class="step-body">
+          <div class="step-title">Configure the Server URL</div>
+          <div class="step-desc">
+            Open the agent script and verify the <code style="font-family:var(--mono);color:var(--accent);background:var(--bg3);padding:1px 6px;border-radius:4px;">SERVER_URL</code> points to your BatchHost-Pro server:
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="lin-code-3"><span class="cmt"># Edit with nano or vi:</span>
+<span class="cmd">sudo nano /opt/batchhost-pro-agent/batchhost-pro_agent.sh</span>
+
+<span class="cmt"># Line ~13 — verify this value:</span>
+<span class="val">SERVER_URL</span>=<span class="url">"https://172.100.30.191:5000"</span>
+<span class="val">HEARTBEAT_INTERVAL</span>=10  <span class="cmt"># seconds between heartbeats</span></pre>
+            <button class="copy-btn" onclick="copyCode('lin-code-3', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="step">
+        <div class="step-num lin">4</div>
+        <div class="step-body">
+          <div class="step-title">Option A — Run Manually (for testing)</div>
+          <div class="step-desc">
+            Start the agent in the foreground to verify connectivity before setting up the service:
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="lin-code-4a"><span class="cmd">cd /opt/batchhost-pro-agent</span>
+<span class="cmd">bash batchhost-pro_agent.sh</span>
+
+<span class="cmt"># Or run agent_runtime.py directly:</span>
+<span class="cmd">python3 agent_runtime.py daemon</span></pre>
+            <button class="copy-btn" onclick="copyCode('lin-code-4a', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num lin">4B</div>
+        <div class="step-body">
+          <div class="step-title">Option B — Install as a systemd Service (recommended)</div>
+          <div class="step-desc">
+            Use the included <code style="font-family:var(--mono);color:var(--accent);background:var(--bg3);padding:1px 6px;border-radius:4px;">batchhost-pro-agent.service</code>
+            unit file to register the agent as a systemd service that starts automatically on boot:
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="lin-code-4b"><span class="cmt"># Copy the unit file to systemd</span>
+<span class="cmd">sudo cp /opt/batchhost-pro-agent/batchhost-pro-agent.service \
+    /etc/systemd/system/batchhost-pro-agent.service</span>
+
+<span class="cmt"># Reload systemd and enable the service</span>
+<span class="cmd">sudo systemctl daemon-reload</span>
+<span class="cmd">sudo systemctl enable batchhost-pro-agent</span>
+<span class="cmd">sudo systemctl start  batchhost-pro-agent</span>
+
+<span class="cmt"># Check status</span>
+<span class="cmd">sudo systemctl status batchhost-pro-agent</span></pre>
+            <button class="copy-btn" onclick="copyCode('lin-code-4b', this)">Copy</button>
+          </div>
+          <div class="note-box ok">
+            ✓ The service is configured with <code style="font-family:var(--mono)">Restart=always</code> and <code style="font-family:var(--mono)">RestartSec=10</code>, so it automatically recovers from crashes.
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="step">
+        <div class="step-num lin">5</div>
+        <div class="step-body">
+          <div class="step-title">Firewall — Allow Outbound to BatchHost-Pro</div>
+          <div class="step-desc">
+            The agent makes outbound HTTPS connections to port <strong>5000</strong> on the BatchHost-Pro server. Ensure your firewall allows this:
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="lin-code-5"><span class="cmt"># If using firewalld (RHEL/CentOS):</span>
+<span class="cmd">sudo firewall-cmd --permanent --add-rich-rule=\
+  'rule family=ipv4 destination address=172.100.30.191/32 port port=5000 protocol=tcp accept'</span>
+<span class="cmd">sudo firewall-cmd --reload</span>
+
+<span class="cmt"># If using ufw (Ubuntu/Debian):</span>
+<span class="cmd">sudo ufw allow out to 172.100.30.191 port 5000 proto tcp</span></pre>
+            <button class="copy-btn" onclick="copyCode('lin-code-5', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="step">
+        <div class="step-num lin">6</div>
+        <div class="step-body">
+          <div class="step-title">Verify Registration</div>
+          <div class="step-desc">
+            After starting, the agent registers automatically with <strong>https://172.100.30.191:5000</strong>.
+            Within 30 seconds it should appear as <span class="badge green" style="font-size:11px;">Online</span> in the BatchHost-Pro <a href="/agents" style="color:var(--accent)">Agents</a> page.
+          </div>
+          <div class="code-wrap">
+            <pre class="code-block" id="lin-code-6"><span class="cmt"># View live service logs:</span>
+<span class="cmd">sudo journalctl -u batchhost-pro-agent -f</span>
+
+<span class="cmt"># Or check the log file directly:</span>
+<span class="cmd">tail -f ~/.local/state/batchhost-pro/agent/logs/agent_$(date +%Y-%m-%d).log</span>
+
+<span class="cmt"># Quick connectivity test (from the agent machine):</span>
+<span class="cmd">curl -k -s https://172.100.30.191:5000/api/dashboard/stats | python3 -m json.tool</span></pre>
+            <button class="copy-btn" onclick="copyCode('lin-code-6', this)">Copy</button>
+          </div>
+          <div class="note-box warn">
+            ⚠ The agent uses <code style="font-family:var(--mono)">curl -k</code> (skip SSL verification) by default because BatchHost-Pro uses a self-signed certificate. This is safe for internal network deployments.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num lin">7</div>
+        <div class="step-body">
+          <div class="step-title">Service Management Commands</div>
+          <div class="step-desc">Common commands for managing the agent service:</div>
+          <div class="code-wrap">
+            <pre class="code-block" id="lin-code-7"><span class="cmd">sudo systemctl start   batchhost-pro-agent</span>  <span class="cmt"># Start</span>
+<span class="cmd">sudo systemctl stop    batchhost-pro-agent</span>  <span class="cmt"># Stop</span>
+<span class="cmd">sudo systemctl restart batchhost-pro-agent</span>  <span class="cmt"># Restart</span>
+<span class="cmd">sudo systemctl disable batchhost-pro-agent</span>  <span class="cmt"># Remove from autostart</span>
+<span class="cmd">sudo systemctl status  batchhost-pro-agent</span>  <span class="cmt"># Check status</span></pre>
+            <button class="copy-btn" onclick="copyCode('lin-code-7', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /tab-linux -->
+
+</div><!-- /guide-card -->
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchTab(os) {
+  const allPanes = document.querySelectorAll('.tab-pane');
+  const allBtns  = document.querySelectorAll('.tab-btn');
+  allPanes.forEach(p => p.classList.remove('active'));
+  allBtns.forEach(b  => b.classList.remove('active', 'win', 'lin'));
+
+  document.getElementById(`tab-${os}`).classList.add('active');
+  const activeBtn = document.getElementById(`tab-${os === 'windows' ? 'win' : 'lin'}-btn`);
+  activeBtn.classList.add('active', os === 'windows' ? 'win' : 'lin');
+}
+
+function copyCode(id, btn) {
+  const pre = document.getElementById(id);
+  const text = pre.innerText || pre.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// Track download clicks
+document.getElementById('btn-dl-win').addEventListener('click', () => flash('Windows agent download started', 'success'));
+document.getElementById('btn-dl-lin').addEventListener('click', () => flash('Linux agent download started', 'success'));
+</script>
+{% endblock %}

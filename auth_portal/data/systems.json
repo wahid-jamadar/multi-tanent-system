@@ -1,0 +1,22 @@
+{
+  "batchhost": {
+    "name": "BatchHost-Pro",
+    "base_url": "https://172.100.30.191:5000",
+    "logo": "/images/BatchHost-Pro_logo.png",
+    "description": "Batch File Management & Monitoring",
+    "accent": "#3B82F6",
+    "glow": "rgba(59,130,246,0.18)",
+    "progress_gradient": "linear-gradient(90deg, #3B82F6 0%, #6366F1 50%, #8B5CF6 100%)",
+    "version": "v2.0"
+  },
+  "filebridge": {
+    "name": "FileBridge",
+    "base_url": "https://172.100.30.191:5001",
+    "logo": "/images/FileBridge_logo.png",
+    "description": "Multi-tenant Server file transfer & management",
+    "accent": "#10B981",
+    "glow": "rgba(16,185,129,0.18)",
+    "progress_gradient": "linear-gradient(90deg, #10B981 0%, #14B8A6 50%, #06B6D4 100%)",
+    "version": "v1.0"
+  }
+}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}System Settings - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Global Configuration</h1>
+    <p class="text-secondary mb-0">Manage platform-wide parameters, security policies, and integrations.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <!-- General Settings -->
+    <section class="section-panel mb-4">
+      <div class="d-flex align-items-center gap-2 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-gear text-primary" viewBox="0 0 16 16">
+          <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/>
+          <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.185 1.185l-.16.291a1.873 1.873 0 0 0 1.115 2.693l.319.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.185l-.291-.16a1.873 1.873 0 0 0-2.693 1.115l-.094.319c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.693-1.115l-.291.16c-.764.415-1.6-.42-1.185-1.185l.16-.291a1.873 1.873 0 0 0-1.115-2.693l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094a1.873 1.873 0 0 0 1.115-2.693l-.16-.291c-.415-.764.42-1.6 1.185-1.185l.291.16a1.873 1.873 0 0 0 2.693-1.115l.094-.319z"/>
+        </svg>
+        <h2 class="h6 mb-0 fw-bold">General Configuration</h2>
+      </div>
+      <form action="{{ url_for('save_settings') }}" method="POST">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <label class="form-label text-secondary small fw-bold">SMTP HOST</label>
+            <input type="text" name="smtp_host" class="form-control" value="{{ settings.smtp_host.value if settings.smtp_host else '' }}" placeholder="smtp.gmail.com">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label text-secondary small fw-bold">SMTP PORT</label>
+            <input type="number" name="smtp_port" class="form-control" value="{{ settings.smtp_port.value if settings.smtp_port else '' }}" placeholder="587">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label text-secondary small fw-bold">SENDER EMAIL</label>
+            <input type="text" name="smtp_from" class="form-control" value="{{ settings.smtp_from.value if settings.smtp_from else '' }}" placeholder="alerts@filebridge.com">
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">SLACK WEBHOOK URL</label>
+            <input type="text" name="slack_webhook_url" class="form-control" value="{{ settings.slack_webhook_url.value if settings.slack_webhook_url else '' }}" placeholder="https://hooks.slack.com/services/...">
+          </div>
+          <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary px-4">Save General Settings</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Database Backups -->
+    <section class="section-panel">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-database text-primary" viewBox="0 0 16 16">
+            <path d="M12.096 6.223A4.92 4.92 0 0 0 13 5.698V7c0 .289-.213.654-.753 1.007a4.493 4.493 0 0 1 1.753.25V4c0-1.007-.875-1.755-1.904-2.223C11.022 1.325 9.572 1 8 1s-3.022.325-4.096.777C2.875 2.245 2 2.993 2 4v9c0 1.007.875 1.755 1.904 2.223C4.978 15.675 6.428 16 8 16s3.022-.325 4.096-.777C13.125 14.755 14 14.007 14 13V9.41a4.5 4.5 0 0 1-1.904 1.813V12c0 .289-.213.654-.753 1.007C10.266 13.516 9.204 14 8 14s-2.266-.484-3.343-.993C3.935 12.67 3 12.29 3 12V4c0-.289.213-.654.753-1.007C4.832 2.484 5.894 2 8 2s3.167.484 4.096.777c.247.104.467.218.657.34.03.013.06.023.089.034a.457.457 0 0 0 .158.039v.114a4.49 4.49 0 0 1 1.486 2.22c.16.471.242.96.242 1.455a4.5 4.5 0 0 1-2.531 4.1z"/>
+            <path d="M8 7c-1.204 0-2.266-.484-3.343-.993C3.935 5.67 3 5.29 3 5c0-.289.213-.654.753-1.007C4.832 3.484 5.894 3 8 3s3.167.484 4.096.777C13.125 4.245 14 4.993 14 6c0 .289-.213.654-.753 1.007C12.168 7.516 11.106 8 10 8c-1.204 0-2.266-.484-3.343-.993C5.935 6.67 5 6.29 5 6c0-.289.213-.654.753-1.007C6.832 4.484 7.894 4 10 4s3.167.484 4.096.777C15.125 5.245 16 5.993 16 7c0 1.105-1.343 2-3 2s-3-.895-3-2z"/>
+          </svg>
+          <h2 class="h6 mb-0 fw-bold">Database & Maintenance</h2>
+        </div>
+        <form action="{{ url_for('create_backup_record') }}" method="POST">
+          <button type="submit" class="btn btn-sm btn-dark border-secondary px-3">Run Instant Backup</button>
+        </form>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Backup Name</th>
+              <th>Status</th>
+              <th>Size</th>
+              <th class="text-end">Started</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in backups %}
+            <tr>
+              <td><span class="text-info x-small font-monospace">{{ b.backup_name }}</span></td>
+              <td><span class="badge status-{{ b.status }}">{{ b.status|capitalize }}</span></td>
+              <td><span class="text-secondary small">{{ (b.size_bytes / 1024 / 1024)|round(2) }} MB</span></td>
+              <td class="text-end text-secondary small local-time" data-utc="{{ b.started_at.isoformat() ~ 'Z' }}" data-format="datetime">{{ b.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+            {% if not backups %}
+            <tr><td colspan="4" class="text-center py-4 text-secondary opacity-50">No backups found.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="col-lg-4">
+    <!-- Security Info -->
+    <section class="section-panel h-100">
+      <h2 class="h6 mb-4 fw-bold">Security Overview</h2>
+      
+      <div class="p-3 rounded bg-dark bg-opacity-25 border border-secondary border-opacity-25 mb-4">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <div class="text-success">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-shield-lock" viewBox="0 0 16 16">
+              <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="fw-bold small">Data Encryption</div>
+            <div class="text-secondary x-small">AES-256 enabled for all transfers</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 rounded bg-dark bg-opacity-25 border border-secondary border-opacity-25 mb-4">
+        <div class="d-flex align-items-center gap-3">
+          <div class="text-info">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-key" viewBox="0 0 16 16">
+              <path d="M0 8a4 4 0 0 1 7.465-2H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0L13 9.207l-.646.647a.5.5 0 0 1-.708 0L11 9.207l-.646.647a.5.5 0 0 1-.708 0L9 9.207l-.646.647A.5.5 0 0 1 7 10h-.535A4 4 0 0 1 0 8zm4-3a3 3 0 1 0 2.712 4.285A.5.5 0 0 1 7.163 9h.63l.853.854a.5.5 0 0 1 0 .708l-.646.646.647.646a.5.5 0 0 1 0 .708l-.646.646.647.646a.5.5 0 0 1 0 .708l-1.5-1.5a.5.5 0 0 1-.146-.354V7.5a.5.5 0 0 1 .146-.354L13 5.793V4.5a.5.5 0 0 1-.146-.354l-1.5-1.5a.5.5 0 0 1-.708 0L9.293 4H7.465A3.993 3.993 0 0 1 4 5z"/>
+              <path d="M3 8a1 1 0 1 1 2 0 1 1 0 0 1-2 0z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="fw-bold small">Audit Logging</div>
+            <div class="text-secondary x-small">100% activity capture enabled</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4 border-secondary border-opacity-25">
+      
+      <div class="alert alert-info border-0 x-small py-2 mb-0">
+        <strong>Pro Tip:</strong> Configure SMTP settings to receive realtime email notifications for critical transfer failures.
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+  .x-small { font-size: 11px; }
+</style>
+{% endblock %}

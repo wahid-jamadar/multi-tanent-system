@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% set active_page = "alerts" %}
+{% block title %}Alerts{% endblock %}
+{% block page_title %}Alerts{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .pagination-info {
+    font-size: 13px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+  .pagination-btns {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .page-num {
+    min-width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text2);
+  }
+  .page-num:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .page-num.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .page-num.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-heading">Alerts <span id="alertCountBadge" style="font-size:12px;background:var(--bg3);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:4px;border:1px solid var(--border);color:var(--text2)">0</span></div>
+    <div class="page-subtitle">Script execution statuses, system events, failures and offline agents</div>
+  </div>
+  <div class="toolbar" style="display:flex;gap:10px;align-items:center;">
+    <input type="search" id="agentSearchInput" placeholder="Agent or Organization…" style="max-width:180px;height:32px;font-size:12px;" oninput="currentPage=1;renderAlerts()">
+    <button class="btn btn-secondary btn-sm" onclick="loadAlerts()">Refresh</button>
+    {% if user and user.role == 'super_admin' %}
+    <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <input type="search" id="searchInput" placeholder="Search message content…" style="max-width:240px;" oninput="currentPage=1;renderAlerts()">
+    <div class="filter-tabs" id="alertFilter">
+      <div class="filter-tab active" onclick="setFilter('all',this)">All</div>
+      <div class="filter-tab" onclick="setFilter('CRITICAL',this)">Critical</div>
+      <div class="filter-tab" onclick="setFilter('ERROR',this)">Error</div>
+      <div class="filter-tab" onclick="setFilter('WARNING',this)">Warning</div>
+      <div class="filter-tab" onclick="setFilter('INFO',this)">Info</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Time</th><th>Level</th><th>Type</th><th>Agent</th><th>Message</th><th>Email</th><th></th></tr>
+      </thead>
+      <tbody id="alertsTable">
+        <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="paginationControls" class="pagination-container">
+    <div class="pagination-info" id="paginationInfo">Showing 0-0 of 0 alerts</div>
+    <div class="pagination-btns" id="paginationBtns">
+      <button class="btn btn-secondary btn-sm" id="prevPageBtn" onclick="prevPage()" style="padding: 0 12px;">Previous</button>
+      <div id="pageNumbers" style="display:flex;gap:4px;align-items:center;"></div>
+      <button class="btn btn-secondary btn-sm" id="nextPageBtn" onclick="nextPage()" style="padding: 0 12px;">Next</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allAlerts = [];
+let currentFilter = 'all';
+let currentPage = 1;
+const pageSize = 20;
+
+async function loadAlerts() {
+  try { 
+    const r = await fetch('/api/alerts'); 
+    allAlerts = (await r.json()).reverse(); 
+    renderAlerts(); 
+  } catch(e) {}
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  currentPage = 1;
+  document.querySelectorAll('#alertFilter .filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderAlerts();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+function renderAlerts() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const aq = document.getElementById('agentSearchInput').value.toLowerCase();
+  let list = allAlerts;
+  
+  document.getElementById('alertCountBadge').textContent = allAlerts.length;
+
+  if (currentFilter !== 'all') list = list.filter(a => a.level === currentFilter);
+  if (q) list = list.filter(a => (a.message || '').toLowerCase().includes(q));
+  if (aq) list = list.filter(a => (a.agent_name || '').toLowerCase().includes(aq) || (a.agent_id || '').toLowerCase().includes(aq) || (a.organization_name || '').toLowerCase().includes(aq));
+
+  const totalAlerts = list.length;
+  const totalPages = Math.ceil(totalAlerts / pageSize) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const start = (currentPage - 1) * pageSize;
+  const end = start + pageSize;
+  const paginatedList = list.slice(start, end);
+
+  const tbody = document.getElementById('alertsTable');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">OK</div><p>No alerts</p></div></td></tr>`;
+    document.getElementById('paginationControls').style.display = 'none';
+    return;
+  }
+  document.getElementById('paginationControls').style.display = 'flex';
+  
+  // Render Info
+  document.getElementById('paginationInfo').textContent = `Showing ${start + 1}-${Math.min(end, totalAlerts)} of ${totalAlerts} alerts`;
+  
+  // Render Buttons
+  document.getElementById('prevPageBtn').disabled = currentPage === 1;
+  document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+  
+  const pageNumbers = document.getElementById('pageNumbers');
+  pageNumbers.innerHTML = '';
+  
+  // Simplified page numbers
+  const maxVisible = 5;
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+  if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
+
+  for (let i = startPage; i <= endPage; i++) {
+    const btn = document.createElement('div');
+    btn.className = `page-num ${i === currentPage ? 'active' : ''}`;
+    btn.textContent = i;
+    btn.onclick = () => goToPage(i);
+    pageNumbers.appendChild(btn);
+  }
+
+  const lvlMap = {CRITICAL:'red',ERROR:'red',WARNING:'yellow',INFO:'blue',SUCCESS:'green'};
+  tbody.innerHTML = paginatedList.map(a => {
+    const safeMsg = escapeHtml(a.message);
+    const safeAgent = escapeHtml(a.agent_name || a.agent_id);
+    const safeType = escapeHtml(a.type);
+    return `
+    <tr>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3);white-space:nowrap">${fmtDT(a.time)}</td>
+      <td><span class="badge ${lvlMap[a.level]||'gray'}">${a.level}</span></td>
+      <td><span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${safeType}</span></td>
+      <td><span class="badge blue">${safeAgent}</span></td>
+      <td style="font-size:12px;color:var(--text);max-width:300px;word-break:break-all;overflow-wrap:break-word;">${safeMsg}</td>
+      <td><span class="badge ${a.email_sent?'green':'gray'}">${a.email_sent?'Sent':'Pending'}</span></td>
+      {% if user and user.role != 'organization_viewer' %}
+      <td><button class="btn btn-secondary btn-sm btn-icon" onclick="deleteAlert('${a.id}')" title="Dismiss">X</button></td>
+      {% else %}
+      <td></td>
+      {% endif %}
+    </tr>`;
+  }).join('');
+}
+
+function prevPage() {
+  if (currentPage > 1) {
+    currentPage--;
+    renderAlerts();
+  }
+}
+
+function nextPage() {
+  const totalAlerts = allAlerts.length; // Approximate, but good enough
+  if (currentPage * pageSize < totalAlerts) {
+    currentPage++;
+    renderAlerts();
+  }
+}
+
+function goToPage(p) {
+  currentPage = p;
+  renderAlerts();
+}
+
+async function deleteAlert(id) {
+  await fetch(`/api/alerts/${id}`, {method:'DELETE'});
+  loadAlerts();
+}
+
+async function clearAll() {
+  if (!confirm('Clear all alerts?')) return;
+  const r = await fetch('/api/alerts');
+  const alerts = await r.json();
+  for (const a of alerts) await fetch(`/api/alerts/${a.id}`, {method:'DELETE'});
+  flash('All alerts cleared','success');
+  loadAlerts();
+}
+
+function fmtDT(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString([],{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+
+loadAlerts();
+setInterval(loadAlerts, 10000);
+</script>
+{% endblock %}

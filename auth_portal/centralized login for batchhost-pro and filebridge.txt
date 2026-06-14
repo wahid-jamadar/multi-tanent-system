@@ -1,0 +1,507 @@
+Centralized Login Portal for BatchHost-Pro & FileBridge System 
+— Implementation Walkthrough
+
+Overview
+This document describes how to build a centralized authentication portal that sits in front of two separate systems — BatchHost-Pro and a second system FileBridge. After a user log in once, they are presented with a selection screen showing both systems as cards. Clicking Login on a system card triggers that system's splash screen and redirects to its dashboard.
+
+Architecture
+
+```mermaid
+flowchart TD
+    A[User visits /login\n(Central Auth Portal)] --> B[Enter credentials\n(email + password)]
+    B --> C[POST /api/auth/login\n→ Central Auth Service]
+    C --> D{Valid\ncredentials?}
+    D -- No --> E[Show error on\nlogin page]
+    D -- Yes --> F[Return user profile +\nallowed systems]
+    F --> G
+    
+    subgraph G [System Selection Screen]
+        H[BatchHost-Pro\nLogin →]
+        I[FileBridge\nLogin →]
+    end
+    
+    H -- User clicks 'Login' on\nBatchHost-Pro --> J[BatchHost-Pro\nSplash Screen]
+    J --> K[BatchHost-Pro\nDashboard]
+    
+    I -- User clicks 'Login' on\nFileBridge --> L[FileBridge\nSplash Screen]
+    L --> M[FileBridge\nDashboard]
+```
+
+User Roles
+Both systems share the same three roles. Role-based access is enforced per system after redirect.
+
+| Role | Description | Scope |
+|---|---|---|
+| `super_admin` | Full access across all organizations and both systems | Global |
+| `organization_admin` | Full access within their assigned organization | Per-org |
+| `organization_viewer` | Read-only access within their assigned organization | Per-org |
+
+Multi-Organization Support
+- Each user belongs to one organization (set at creation time by super_admin).
+- `super_admin` users see all organizations' data in both systems.
+- `organization_admin` and `organization_viewer` see only their org's data.
+- The centralized login must pass the `organization_id` along with the session/token so each system can enforce its own org-level filtering.
+
+Phase 1 — Centralized Auth Service
+
+Shared Session / Cookie (Simpler, same server)
+As the both systems run on the same domain, use a shared secret key and a common `users.json`. The central login sets a cookie (`auth_session`) and both Flask apps read it.
+
+- Both apps must use the same `secret_key` for Flask sessions.
+- Same-domain cookies are automatically shared.
+- Simpler but less scalable.
+
+Phase 2 — Login Page (`portal.html`)
+Layout
+The login page is identical in look and feel to the existing login page of BatchHost-Pro System — same dark theme, same glass card, same splash screen pattern.
+
+CSS Variables to Reuse
+Copy the existing design tokens from base.html of BatchHost-Pro System
+
+```css
+:root {
+  --bg: #0B1220;
+  --bg2: #111827;
+  --accent: #3B82F6;
+  --text: #E5E7EB;
+  /* ... all existing tokens ... */
+}
+```
+
+Phase 3 — System Selection Screen (`select.html`)
+After a successful login, redirect to `/select`. This page shows two large cards.
+
+Layout
+
+```text
+Welcome back, Wahid
+Select the system you want to access
+
+[Card 1]
+Icon: BatchHost-Pro
+Title: BatchHost-Pro
+Description: Batch File Management System
+Role: Org Admin
+Org: Acme Corp
+Button: [-> Login ->] (Blue)
+
+[Card 2]
+Icon: FileBridge
+Title: FileBridge
+Description: Multi-tenant Server file transfer & management
+Role: Viewer
+Org: Acme Corp
+Button: [-> Login ->] (Green)
+```
+
+Card Structure (HTML)
+
+```html
+<div class="system-cards">
+  <!-- Card 1: BatchHost-Pro -->
+  <div class="system-card" id="card-batchhost">
+    <div class="system-card-logo">
+      <img src="/images/BatchHost-Pro_logo.png" alt="BatchHost-Pro">
+    </div>
+    <div class="system-card-name">BatchHost-Pro</div>
+    <div class="system-card-desc">Batch File Management &amp; Monitoring</div>
+    <div class="system-card-meta">
+      <span class="role-badge organization_admin">Org Admin</span>
+      <span class="system-card-org">Acme Corp</span>
+    </div>
+    <button class="btn btn-primary" onclick="launchSystem('batchhost')">
+      Login →
+    </button>
+  </div>
+
+  <!-- Card 2: System B -->
+  <div class="system-card" id="card-systemb">
+    <div class="system-card-logo">
+      <img src="/images/SystemB_logo.png" alt="System B">
+    </div>
+    <div class="system-card-name">System B</div>
+    <div class="system-card-desc">[System B Description]</div>
+    <div class="system-card-meta">
+      <span class="role-badge organization_viewer">Viewer</span>
+      <span class="system-card-org">Acme Corp</span>
+    </div>
+    <button class="btn btn-primary" onclick="launchSystem('systemb')">
+      Login →
+    </button>
+  </div>
+</div>
+```
+System Card CSS
+
+```css
+.system-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(300px, 380px));
+  gap: 24px;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.system-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  transition: all 0.25s ease;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.system-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(59,130,246,0.04) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.system-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(59,130,246,0.2);
+}
+
+.system-card:hover::before { opacity: 1; }
+
+.system-card-logo img {
+  height: 72px;
+  width: auto;
+  filter: drop-shadow(0 4px 16px rgba(59,130,246,0.2));
+  transition: transform 0.3s ease;
+}
+
+.system-card:hover .system-card-logo img {
+  transform: scale(1.06);
+}
+
+.system-card-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.system-card-desc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+.system-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.system-card-org {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: var(--mono);
+}
+
+.system-card .btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  justify-content: center;
+}
+```
+
+Phase 4 — System-Specific Splash Screens
+When the user clicks Login → on a system card, the flow is:
+
+1. Call `POST /api/auth/launch {system: "BatchHost-Pro”} ` → get `launch_url`
+2. Show the target system's splash screen (in-page overlay) for ~1.5 seconds
+3. Navigate to `launch_url` (which will trigger the system's own splash on its login redirect)
+
+Per-System Splash Customization
+Each system splash uses the same CSS structure as the existing login.html splash screen from BatchHost-Pro System, but with system-specific branding:
+
+| Property | BatchHost-Pro | FileBridge |
+|---|---|---|
+| Logo | BatchHost-Pro_logo.png | FileBridge_logo.png |
+| Brand name | BatchHost-Pro | File Bridge |
+| Tagline | Batch File Management System | Multi-tenant Server file transfer & management |
+| Accent colour | #3B82F6 (blue) | #10B981 (emerald) |
+| Glow colour | rgba(59,130,246,0.18) | rgba(16,185,129,0.18) |
+| Progress gradient | Blue → Indigo → Purple | Emerald → Teal → Cyan |
+| Version | v2.0 | v1.0 |
+
+JavaScript Launch Handler
+
+```javascript
+async function launchSystem(systemKey) {
+  const btn = document.querySelector(`#card-${systemKey} .btn`);
+  btn.disabled = true;
+  btn.textContent = 'Launching…';
+
+  try {
+    const r = await fetch('/api/auth/launch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: systemKey })
+    });
+    const data = await r.json();
+
+    if (data.launch_url) {
+      // Show system-specific splash
+      showSplash(systemKey);
+      // After splash animation (1.5s), navigate
+      setTimeout(() => {
+        window.location.href = data.launch_url;
+      }, 1500);
+    } else {
+      flash(data.message || 'Launch failed', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Login →';
+    }
+  } catch (e) {
+    flash('Connection error', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Login →';
+  }
+}
+```
+
+Phase 5 — BatchHost-Pro SSO Endpoint
+Add a new route to the existing server.py of BatchHost-Pro System to accept the launch token and create a local session.
+
+```python
+@app.route('/auth/sso')
+def sso_login():
+    """Accept a launch token from the central auth portal."""
+    token = request.args.get('token')
+    if not token:
+        return redirect(url_for('login_page'))
+
+    # Verify token with the central auth service
+    try:
+        resp = requests.post(
+            f"{CENTRAL_AUTH_URL}/api/auth/verify-token",
+            json={"token": token},
+            timeout=5
+        )
+        data = resp.json()
+    except Exception:
+        flash_msg = "SSO verification failed"
+        return redirect(url_for('login_page'))
+
+    if not data.get('valid'):
+        return redirect(url_for('login_page'))
+
+    user = data['user']
+    # Establish Flask session exactly as normal login does
+    session['user_id'] = user['id']
+    session['role'] = user['role']
+    session['organization_id'] = user['organization_id']
+    session['login_at'] = time.time()
+
+    # Mark web presence, log admin action, etc. (same as existing login)
+    mark_web_presence(user['id'])
+
+    # Show splash on BatchHost-Pro's dashboard
+    return redirect(url_for('dashboard'))
+```
+
+> NOTE - The `show_splash` flag can be passed as a query param (`?splash=1`) so the dashboard template knows to show the splash on first load after SSO redirect.
+
+Phase 6 — Modified `login.html` for BatchHost-Pro
+The existing login.html of BatchHost-Pro System should be kept as-is for direct access fallback (users who go directly to BatchHost-Pro's URL). However, add a banner or redirect:
+
+```html
+<!-- Optional: Add to login.html to redirect to central portal -->
+<div class="switch-link">
+  Have multiple systems?
+  <a href="https://portal.yourdomain.com/login">Use the Central Portal →</a>
+</div>
+```
+
+Phase 7 — Backend: Central Auth `server.py`
+
+Key Endpoints
+```python
+# POST /api/auth/login
+@app.route('/api/auth/login', methods=['POST'])
+def auth_login():
+    data = request.json
+    email = data.get('email', '').strip()
+    password = data.get('password', '')
+
+    # Load from shared users.json
+    users = load_json(USERS_FILE)
+    user = next((u for u in users if u['email'] == email and u['status'] == 'active'), None)
+    if not user or not verify_pw(user['password'], password):
+        return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
+
+    session['user_id'] = user['id']
+    session['role'] = user['role']
+    session['organization_id'] = user['organization_id']
+
+    # Determine which systems this user can access
+    allowed_systems = get_allowed_systems(user)
+
+    return jsonify({
+        'success': True,
+        'redirect': '/select',
+        'user': {
+            'name': user.get('username'),
+            'role': user['role'],
+            'organization': get_org_name(user['organization_id'])
+        },
+        'systems': allowed_systems
+    })
+
+
+# POST /api/auth/launch
+@app.route('/api/auth/launch', methods=['POST'])
+@login_required
+def auth_launch():
+    system_key = request.json.get('system')
+    user = _current_user()
+
+    # Generate a short-lived one-use token
+    token = generate_launch_token(user, system_key)
+    system_config = SYSTEMS[system_key]
+
+    return jsonify({
+        'launch_url': f"{system_config['base_url']}/auth/sso?token={token}"
+    })
+
+
+# POST /api/auth/verify-token  (called by target systems)
+@app.route('/api/auth/verify-token', methods=['POST'])
+def verify_token():
+    token = request.json.get('token')
+    payload = consume_launch_token(token)  # one-use, 30s TTL
+    if not payload:
+        return jsonify({'valid': False}), 401
+    return jsonify({'valid': True, 'user': payload['user']})
+```
+
+Systems Configuration
+
+```python
+SYSTEMS = {
+    'batchhost': {
+        'name': 'BatchHost-Pro',
+        'base_url': 'https://batchhost.yourdomain.com',
+        'logo': '/images/BatchHost-Pro_logo.png',
+        'description': 'Batch File Management & Monitoring',
+        'accent': '#3B82F6',
+    },
+    'systemb': {
+        'name': 'System B',
+        'base_url': 'https://systemb.yourdomain.com',
+        'logo': '/images/SystemB_logo.png',
+        'description': 'System B Description',
+        'accent': '#10B981',
+    }
+}
+```
+
+Phase 8 — Role-Based System Access Control
+Control which systems a user can see on the selection screen:
+
+```python
+def get_allowed_systems(user):
+    """Return list of systems a user is allowed to access."""
+    role = user.get('role')
+    allowed = []
+
+    for key, config in SYSTEMS.items():
+        # super_admin sees everything
+        if role == 'super_admin':
+            allowed.append({**config, 'key': key})
+        # org roles: check if user's org is registered for this system
+        elif user['organization_id'] in config.get('allowed_orgs', []):
+            allowed.append({**config, 'key': key})
+
+    return allowed
+```
+
+> TIP - Store per-system org allowlists in `settings.json` or a separate `systems.json` file for easy management without code changes.
+
+File Structure Summary
+
+New Files to Create
+
+| File | Purpose |
+|---|---|
+| auth_portal/server.py | Central auth Flask app |
+| auth_portal/templates/portal.html | Login page (reuses BatchHost-Pro design) |
+| auth_portal/templates/select.html | System selection screen with two cards |
+| auth_portal/data/systems.json | System configuration (URLs, logos, orgs) |
+
+Modified Files in BatchHost-Pro
+
+| File | Change |
+|---|---|
+| server.py | Add /auth/sso route for token exchange |
+| login.html | Add optional "Use Central Portal" link |
+| dashboard.html | Support? splash=1 query param to show splash after SSO |
+
+User Flow Summary
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant P as Auth Portal
+    participant S as Target System (BatchHost)
+
+    U->>P: Login (email/pw)
+    P->>P: Validate against users.json
+    P->>U: Redirect to /select
+    U->>P: Click "Login" on Target
+    P->>S: Generate token
+    P->>U: Redirect to S/auth/sso?token=...
+    U->>S: Access SSO URL
+    S->>P: Verify token (POST /verify-token)
+    P-->>S: Return User Object
+    S->>S: Create local session
+    S->>U: Redirect to Dashboard
+```
+
+1. User opens: https://portal.yourdomain.com/login
+2. Portal shows its own splash (once per session) - YourPortal
+3. User enters email + password
+4. Central auth validates credentials against shared users.json
+5. Redirect to: /select
+6. User sees two cards: BatchHost-Pro | FileBridge. Each card shows: Logo, Name, Description, Role badge, Org name, "Login ->" button
+7. User clicks "Login ->" on BatchHost-Pro
+8. Portal shows BatchHost-Pro splash screen (1.5s, blue theme)
+9. Browser navigates to: https://batchhost.yourdomain.com/auth/sso?token=<launch_token>
+10. BatchHost-Pro verifies token with portal
+11. BatchHost-Pro creates local session, redirects to /dashboard
+12. BatchHost-Pro dashboard loads (optionally with its own splash on first load)
+
+Security Considerations
+CAUTIONS: 
+- Launch tokens must be one-use and expire in ≤ 30 seconds to prevent replay attacks.
+- Communicate between auth portal and target systems over HTTPS only.
+- Use the existing CSRF protection pattern from server.py of BatchHost-Pro System on all state-mutating endpoints.
+- Never expose the shared `SECRET_KEY` in version control — use environment variables.
+- Rate-limit `/api/auth/login` using the existing `rate_limit` decorator from rate_limiter.py of BatchHost-Pro System.
+
+Open Questions
+Before implementation begins, clarify the following:
+
+1. Where does System B live? — Same server as BatchHost-Pro
+2. Shared or separate user database? —both systems should read from a single `users.json`
+3. What is the name & branding of System B? — Name – FileBridge, Logo, color accent, tagline, version – 1.0
+4. Do all users have access to both systems? — Yes
+5. Session strategy — This system uses stateful, server-side Flask sessions

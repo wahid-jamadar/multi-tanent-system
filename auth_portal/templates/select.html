@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central Auth Portal — System Selection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0B1220; --bg2: #111827; --bg3: #1A2332; --border: #1F2A3A;
+      --text: #E5E7EB; --text2: #9CA3AF; --text3: #6B7280;
+      --accent: #8B5CF6; --border-hover: rgba(139, 92, 246, 0.4);
+      --green: #22C55E; --red: #EF4444;
+      --mono: 'JetBrains Mono', monospace; --sans: 'Inter', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: var(--sans);
+      background: var(--bg) url('/images/login-page-bg-image.png') no-repeat center center fixed;
+      background-size: cover;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 20px;
+      position: relative; overflow: hidden;
+    }
+    .bg-grid {
+      position: fixed; inset:0; pointer-events:none; opacity:0.04;
+      background-image: linear-gradient(var(--border) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .header {
+      text-align: center; margin-bottom: 30px; z-index: 1;
+    }
+    .header h1 {
+      font-size: 32px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px;
+    }
+    .header h1 span {
+      background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header p {
+      font-size: 15px; color: var(--text2);
+    }
+    .system-cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(320px, 390px));
+      gap: 28px;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1;
+      width: 100%;
+      max-width: 900px;
+    }
+    @media (max-width: 768px) {
+      .system-cards {
+        grid-template-columns: 1fr;
+        max-width: 420px;
+      }
+    }
+    .system-card {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+    .system-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, var(--card-glow), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .system-card:hover {
+      border-color: var(--card-color);
+      transform: translateY(-6px);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    .system-card:hover::before { opacity: 0.8; }
+    
+    .system-card-logo img {
+      height: 76px;
+      width: auto;
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25));
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1;
+    }
+    .system-card:hover .system-card-logo img {
+      transform: scale(1.08) rotate(1deg);
+    }
+    
+    .system-card-name {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      z-index: 1;
+      margin-top: 4px;
+    }
+    .system-card-desc {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.5;
+      z-index: 1;
+      min-height: 38px;
+    }
+    .system-card-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 1;
+      width: 100%;
+    }
+    .role-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .role-badge.super_admin { background: rgba(139, 92, 246, 0.15); color: #A78BFA; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .role-badge.organization_admin { background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .role-badge.organization_viewer { background: rgba(156, 163, 175, 0.12); color: #D1D5DB; border: 1px solid rgba(156, 163, 175, 0.25); }
+    
+    .system-card-org {
+      font-size: 12px;
+      color: var(--text3);
+      font-family: var(--mono);
+      font-weight: 500;
+    }
+    .btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #fff;
+      background: var(--card-color);
+      transition: all 0.2s ease;
+    }
+    .btn:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+    .btn:active {
+      transform: none;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-logout {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 10;
+      transition: opacity 0.2s ease;
+      padding: 0;
+    }
+    .btn-logout:hover {
+      opacity: 0.8;
+    }
+
+    .flash {
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .flash-msg {
+      padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+      animation: slideIn 0.25s ease, fadeOut 0.3s ease 2.7s forwards;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .flash-msg.error { background: rgba(239,68,68,0.11); color: var(--red); border: 1px solid rgba(239,68,68,0.28); }
+    @keyframes slideIn { from { transform: translateX(60px); opacity:0; } }
+    @keyframes fadeOut { to { opacity:0; transform: translateX(60px); } }
+
+    /* ═══════════════════════════════════════════════════════════════
+       BATCHHOST-PRO LAUNCH OVERLAY (SPLASH SCREEN)
+       ═══════════════════════════════════════════════════════════════ */
+    .bhp-splash-overlay {
+      position: fixed; inset: 0; z-index: 10000;
+      background: #0B1220;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .bhp-splash-overlay.active {
+      opacity: 1; pointer-events: all;
+    }
+    .bhp-splash-overlay.fade-out {
+      opacity: 0; transform: scale(1.03); pointer-events: none;
+    }
+    .bhp-splash-grid {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0.035;
+      background-image: linear-gradient(#1F2A3A 1px, transparent 1px),
+                        linear-gradient(90deg, #1F2A3A 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: bhpSplashGridDrift 20s linear infinite;
+    }
+    @keyframes bhpSplashGridDrift { to { background-position: 40px 40px; } }
+    
+    .bhp-splash-glow {
+      position: absolute; width: 340px; height: 340px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, rgba(139, 92, 246, 0.06) 50%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%, -60%);
+      pointer-events: none; animation: bhpSplashGlowPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes bhpSplashGlowPulse {
+      0%, 100% { opacity: 0.6; transform: translate(-50%, -60%) scale(1); }
+      50%      { opacity: 1;   transform: translate(-50%, -60%) scale(1.08); }
+    }
+    
+    .bhp-splash-particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .bhp-splash-particle {
+      position: absolute; width: 3px; height: 3px; border-radius: 50%;
+      background: rgba(59, 130, 246, 0.35);
+      animation: bhpSplashParticleFloat linear infinite;
+    }
+    .bhp-splash-particle:nth-child(1) { left: 15%; top: 80%; animation-duration: 4s; animation-delay: 0s; width: 2px; height: 2px; }
+    .bhp-splash-particle:nth-child(2) { left: 30%; top: 90%; animation-duration: 5s; animation-delay: 0.3s; }
+    .bhp-splash-particle:nth-child(3) { left: 50%; top: 85%; animation-duration: 3.5s; animation-delay: 0.6s; width: 4px; height: 4px; background: rgba(139, 92, 246, 0.3); }
+    .bhp-splash-particle:nth-child(4) { left: 70%; top: 88%; animation-duration: 4.5s; animation-delay: 0.2s; width: 2px; height: 2px; }
+    .bhp-splash-particle:nth-child(5) { left: 85%; top: 82%; animation-duration: 5.5s; animation-delay: 0.8s; background: rgba(139, 92, 246, 0.25); }
+    .bhp-splash-particle:nth-child(6) { left: 25%; top: 75%; animation-duration: 6s; animation-delay: 1s; width: 2px; height: 2px; }
+    .bhp-splash-particle:nth-child(7) { left: 60%; top: 92%; animation-duration: 3.8s; animation-delay: 0.5s; width: 4px; height: 4px; background: rgba(59, 130, 246, 0.2); }
+    .bhp-splash-particle:nth-child(8) { left: 42%; top: 78%; animation-duration: 4.2s; animation-delay: 1.2s; }
+    
+    @keyframes bhpSplashParticleFloat {
+      from { transform: translateY(0) scale(1); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      to   { transform: translateY(-100vh) scale(0.3); opacity: 0; }
+    }
+    
+    .bhp-splash-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0; }
+    .bhp-splash-logo {
+      height: 120px; width: auto; opacity: 0; transform: scale(0.82);
+      animation: bhpSplashLogoIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      filter: drop-shadow(0 0 40px rgba(59, 130, 246, 0.25)) drop-shadow(0 8px 32px rgba(0, 0, 0, 0.4));
+      margin-bottom: 20px;
+    }
+    @keyframes bhpSplashLogoIn {
+      0%   { opacity: 0; transform: scale(0.82) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    
+    .bhp-splash-brand {
+      font-family: var(--sans); font-size: 34px; font-weight: 800; color: #E5E7EB; letter-spacing: -0.02em;
+      opacity: 0; transform: translateY(15px);
+      animation: bhpSplashTextIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+      margin-bottom: 8px; position: relative; overflow: hidden;
+    }
+    .bhp-splash-brand span { color: #3B82F6; }
+    .bhp-splash-brand::after {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 45%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.12) 55%, transparent 100%);
+      animation: bhpSplashShimmer 1.2s ease 0.9s forwards;
+    }
+    @keyframes bhpSplashShimmer { to { left: 100%; } }
+    @keyframes bhpSplashTextIn { to { opacity: 1; transform: translateY(0); } }
+    
+    .bhp-splash-tagline {
+      font-family: var(--sans); font-size: 11px; font-weight: 500; color: #6B7280; text-transform: uppercase;
+      letter-spacing: 0.14em; opacity: 0; transform: translateY(10px);
+      animation: bhpSplashTextIn 0.5s ease 0.6s forwards; margin-bottom: 32px;
+    }
+    .bhp-splash-progress-wrap {
+      width: 280px; height: 4px; background: rgba(31, 42, 58, 0.8); border-radius: 4px; overflow: hidden;
+      opacity: 0; animation: bhpSplashTextIn 0.3s ease 0.8s forwards; margin-bottom: 16px; position: relative;
+    }
+    .bhp-splash-progress-fill {
+      height: 100%; width: 0%; border-radius: 4px;
+      background: linear-gradient(90deg, #3B82F6 0%, #6366F1 50%, #8B5CF6 100%);
+      position: relative;
+    }
+    .bhp-splash-progress-fill.animating {
+      animation: bhpSplashFill 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .bhp-splash-progress-fill::after {
+      content: ''; position: absolute; right: 0; top: -3px; width: 12px; height: 10px;
+      border-radius: 50%; background: rgba(99, 102, 241, 0.6); filter: blur(4px);
+    }
+    @keyframes bhpSplashFill { to { width: 100%; } }
+    
+    .bhp-splash-status {
+      font-family: var(--mono); font-size: 12px; color: #4B5563; opacity: 0;
+      animation: bhpSplashTextIn 0.3s ease 1s forwards; min-height: 18px; transition: opacity 0.15s ease;
+    }
+    .bhp-splash-status.switching { opacity: 0.3; }
+    .bhp-splash-version {
+      position: absolute; bottom: 32px; font-family: var(--mono); font-size: 10px; color: #374151;
+      letter-spacing: 0.06em; opacity: 0; animation: bhpSplashTextIn 0.4s ease 1.2s forwards;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       FILEBRIDGE LAUNCH OVERLAY (SPLASH SCREEN)
+       ═══════════════════════════════════════════════════════════════ */
+    .fb-splash-overlay {
+      position: fixed; inset: 0; z-index: 10000;
+      background-color: #030712;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.5s ease-out;
+    }
+    .fb-splash-overlay.active {
+      opacity: 1; pointer-events: all;
+    }
+    .fb-splash-bg {
+      position: absolute; inset: 0; z-index: 1;
+    }
+    .fb-cyber-grid {
+      position: absolute; inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+      transform: perspective(500px) rotateX(60deg) translateY(-100px) scale(3);
+      animation: fbGridMove 20s linear infinite;
+      opacity: 0.4;
+    }
+    @keyframes fbGridMove {
+      0% { transform: perspective(500px) rotateX(60deg) translateY(0) scale(3); }
+      100% { transform: perspective(500px) rotateX(60deg) translateY(50px) scale(3); }
+    }
+    .fb-glow-orb {
+      position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.15;
+    }
+    .fb-orb-1 {
+      width: 600px; height: 600px; background: #3b82f6; top: -200px; right: -100px;
+      animation: fbOrbFloat 15s ease-in-out infinite alternate;
+    }
+    .fb-orb-2 {
+      width: 400px; height: 400px; background: #06b6d4; bottom: -100px; left: -100px;
+      animation: fbOrbFloat 20s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes fbOrbFloat {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(50px, 50px) scale(1.1); }
+    }
+    
+    .fb-splash-particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+    .fb-splash-particle {
+      position: absolute; background: #06b6d4; border-radius: 50%;
+      box-shadow: 0 0 8px #06b6d4; opacity: 0;
+      animation: fbFloatUpParticle linear infinite;
+    }
+    @keyframes fbFloatUpParticle {
+      0% { transform: translateY(100px) scale(0.5); opacity: 0; }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.8; }
+      100% { transform: translateY(-200px) scale(1.5); opacity: 0; }
+    }
+    
+    .fb-splash-centerpiece {
+      position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center;
+    }
+    .fb-splash-logo-wrapper {
+      position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 2rem;
+    }
+    .fb-splash-ring {
+      position: absolute; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    .fb-splash-ring-outer {
+      width: 160px; height: 160px; border: 2px dashed rgba(6, 182, 212, 0.3);
+      animation: fbSpinSlow 12s linear infinite; box-shadow: inset 0 0 20px rgba(6, 182, 212, 0.1);
+    }
+    .fb-splash-ring-inner {
+      width: 130px; height: 130px; border: 1px solid rgba(59, 130, 246, 0.5);
+      animation: fbSpinSlowReverse 8s linear infinite;
+    }
+    @keyframes fbSpinSlow { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+    @keyframes fbSpinSlowReverse { 100% { transform: translate(-50%, -50%) rotate(-360deg); } }
+    
+    .fb-splash-logo-container {
+      position: relative; width: 80px; height: 80px; z-index: 2;
+      animation: fbLogoPulse 3s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.6));
+    }
+    .fb-splash-logo-img { width: 100%; height: 100%; object-fit: contain; }
+    .fb-splash-logo-sweep {
+      position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+      transform: rotate(45deg) translateY(-100%); animation: fbLogoSweep 4s linear infinite;
+      mix-blend-mode: overlay; pointer-events: none;
+    }
+    @keyframes fbLogoPulse {
+      0% { transform: scale(0.95); filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.4)); }
+      100% { transform: scale(1.05); filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.8)); }
+    }
+    @keyframes fbLogoSweep {
+      0% { transform: rotate(45deg) translateY(-100%); }
+      50% { transform: rotate(45deg) translateY(100%); }
+      100% { transform: rotate(45deg) translateY(100%); }
+    }
+    
+    .fb-splash-text-container { text-align: center; margin-bottom: 3rem; }
+    .fb-splash-title {
+      font-size: 3rem; font-weight: 800; letter-spacing: -1px; margin: 0;
+      background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+      -webkit-background-clip: text; color: transparent;
+      animation: fbShimmerText 3s infinite linear; background-size: 200% auto;
+    }
+    @keyframes fbShimmerText { to { background-position: 200% center; } }
+    
+    .fb-splash-tagline {
+      color: #06b6d4; text-transform: uppercase; letter-spacing: 6px; font-size: 0.85rem; font-weight: 600;
+      margin-top: 10px; opacity: 0; animation: fbFadeInUp 1s ease-out 0.5s forwards;
+    }
+    @keyframes fbFadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fb-splash-loader-wrapper { width: 400px; max-width: 90vw; display: flex; flex-direction: column; gap: 12px; }
+    .fb-splash-progress-container {
+      width: 100%; height: 4px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; overflow: hidden;
+      position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+    }
+    .fb-splash-progress-bar {
+      height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #06b6d4);
+      border-radius: 4px; position: relative; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+    }
+    .fb-splash-progress-shine {
+      position: absolute; top: 0; left: 0; bottom: 0; width: 100px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+      animation: fbSplashSweepRight 1.5s infinite linear;
+    }
+    @keyframes fbSplashSweepRight {
+      from { transform: translateX(-100px); }
+      to { transform: translateX(400px); }
+    }
+    
+    .fb-splash-loader-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    }
+    .fb-splash-status-text { color: #94a3b8; letter-spacing: 1px; }
+    .fb-splash-counter { color: #06b6d4; font-weight: 700; }
+    
+    .fb-splash-dots { position: relative; }
+    .fb-splash-dots::after {
+      content: ''; animation: fbBlinkDots 1.5s infinite step-start;
+    }
+    @keyframes fbBlinkDots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="flash" id="flashContainer"></div>
+
+<!-- BATCHHOST-PRO LAUNCH OVERLAY (SPLASH SCREEN) -->
+<div id="bhpLaunchOverlay" class="bhp-splash-overlay" role="presentation" aria-hidden="true" style="display: none;">
+  <div class="bhp-splash-grid"></div>
+  <div class="bhp-splash-glow"></div>
+  <div class="bhp-splash-particles">
+    <div class="bhp-splash-particle"></div>
+    <div class="bhp-splash-particle"></div>
+    <div class="bhp-splash-particle"></div>
+    <div class="bhp-splash-particle"></div>
+    <div class="bhp-splash-particle"></div>
+    <div class="bhp-splash-particle"></div>
+    <div class="bhp-splash-particle"></div>
+    <div class="bhp-splash-particle"></div>
+  </div>
+  <div class="bhp-splash-content">
+    <img src="/images/BatchHost-Pro_logo.png" alt="BatchHost-Pro" class="bhp-splash-logo">
+    <div class="bhp-splash-brand">BatchHost<span>Pro</span></div>
+    <div class="bhp-splash-tagline">Batch File Management System</div>
+    <div class="bhp-splash-progress-wrap">
+      <div class="bhp-splash-progress-fill"></div>
+    </div>
+    <div class="bhp-splash-status">Initializing system…</div>
+  </div>
+  <div class="bhp-splash-version">v2.0</div>
+</div>
+
+<!-- FILEBRIDGE LAUNCH OVERLAY (SPLASH SCREEN) -->
+<div id="fbLaunchOverlay" class="fb-splash-overlay" role="presentation" aria-hidden="true" style="display: none;">
+  <div class="fb-splash-bg">
+    <div class="fb-cyber-grid"></div>
+    <div class="fb-glow-orb fb-orb-1"></div>
+    <div class="fb-glow-orb fb-orb-2"></div>
+    <div class="fb-splash-particles" id="fb-splash-particles"></div>
+  </div>
+  <div class="fb-splash-centerpiece">
+    <div class="fb-splash-logo-wrapper">
+      <div class="fb-splash-ring fb-splash-ring-outer"></div>
+      <div class="fb-splash-ring fb-splash-ring-inner"></div>
+      <div class="fb-splash-logo-container">
+        <img src="/images/FileBridge_logo.png" alt="FileBridge" class="fb-splash-logo-img">
+        <div class="fb-splash-logo-sweep"></div>
+      </div>
+    </div>
+    <div class="fb-splash-text-container">
+      <h1 class="fb-splash-title">FileBridge</h1>
+      <div class="fb-splash-tagline">Secure Infrastructure Operations</div>
+    </div>
+    <div class="fb-splash-loader-wrapper">
+      <div class="fb-splash-progress-container">
+        <div class="fb-splash-progress-bar" id="fb-splash-bar">
+          <div class="fb-splash-progress-shine"></div>
+        </div>
+      </div>
+      <div class="fb-splash-loader-footer">
+        <span class="fb-splash-status-text">INITIALIZING CORE SERVICES<span class="fb-splash-dots">...</span></span>
+        <span class="fb-splash-counter" id="fb-splash-counter">0%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="header">
+  <h1>Welcome back, <span>{{ user.name }}</span></h1>
+  <p>Select the system you want to access</p>
+</div>
+
+<div class="system-cards">
+  {% for key, sys in systems.items() %}
+  <div class="system-card" id="card-{{ key }}" 
+       style="--card-color: {{ sys.accent }}; --card-glow: {{ sys.glow }};">
+    <div class="system-card-logo">
+      <img src="{{ sys.logo }}" alt="{{ sys.name }}">
+    </div>
+    <div class="system-card-name">{{ sys.name }}</div>
+    <div class="system-card-desc">{{ sys.description }}</div>
+    <div class="system-card-meta">
+      {% set sys_role = user.batchhost_role if key == 'batchhost' else user.filebridge_role %}
+      {% set sys_role_name = user.batchhost_role_name if key == 'batchhost' else user.filebridge_role_name %}
+      <span class="role-badge {{ sys_role }}">{{ sys_role_name }}</span>
+      <span class="system-card-org">{{ user.organization }}</span>
+    </div>
+    <button class="btn" onclick="launchSystem('{{ key }}')">
+      Login &rarr;
+    </button>
+  </div>
+  {% endfor %}
+</div>
+
+<button class="btn-logout" onclick="window.location.href='/logout'">Sign Out</button>
+
+
+<script>
+  function flash(msg){
+    const c=document.getElementById('flashContainer');
+    const el=document.createElement('div'); el.className='flash-msg error';
+    el.innerHTML=`<span>✗</span> ${msg}`; c.appendChild(el);
+    setTimeout(()=>el.remove(),3100); 
+  }
+
+  // System Configurations passed dynamically to JS
+  const systemConfigs = {{ systems_js | safe }};
+
+  async function launchSystem(systemKey) {
+    const config = systemConfigs[systemKey];
+    if (!config) return;
+
+    const btn = document.querySelector(`#card-${systemKey} .btn`);
+    if(btn) { btn.disabled = true; btn.textContent = 'Launching…'; }
+
+    try {
+      const r = await fetch('/api/auth/launch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ system: systemKey })
+      });
+      const data = await r.json();
+
+      if (data.launch_url) {
+        // Show target system specific splash screen
+        showSplash(systemKey, config);
+        
+        // After splash animation completes (~1.5 seconds), redirect
+        setTimeout(() => {
+          window.location.href = data.launch_url;
+        }, 1600);
+      } else {
+        flash(data.message || 'Launch failed');
+        if(btn) { btn.disabled = false; btn.textContent = 'Login →'; }
+      }
+    } catch (e) {
+      flash('Connection error');
+      if(btn) { btn.disabled = false; btn.textContent = 'Login →'; }
+    }
+  }
+
+  let activeInterval = null;
+  let activeAnimationId = null;
+
+  function showSplash(systemKey, config) {
+    // Clear any previous interval/animation
+    if (activeInterval) clearInterval(activeInterval);
+    if (activeAnimationId) cancelAnimationFrame(activeAnimationId);
+
+    // Hide both overlays
+    document.getElementById('bhpLaunchOverlay').style.display = 'none';
+    document.getElementById('bhpLaunchOverlay').classList.remove('active');
+    document.getElementById('fbLaunchOverlay').style.display = 'none';
+    document.getElementById('fbLaunchOverlay').classList.remove('active');
+
+    if (systemKey === 'batchhost') {
+      const overlay = document.getElementById('bhpLaunchOverlay');
+      overlay.style.display = 'flex';
+      void overlay.offsetWidth; // Force reflow
+      overlay.classList.add('active');
+
+      const statusEl = overlay.querySelector('.bhp-splash-status');
+      const progressFill = overlay.querySelector('.bhp-splash-progress-fill');
+      
+      // Reset progress animation
+      progressFill.classList.remove('animating');
+      void progressFill.offsetWidth;
+      progressFill.classList.add('animating');
+
+      const messages = [
+        'Initializing system…',
+        'Loading modules…',
+        'Verifying configuration…',
+        'Preparing dashboard…'
+      ];
+      let msgIndex = 0;
+      statusEl.textContent = messages[msgIndex];
+
+      activeInterval = setInterval(() => {
+        statusEl.classList.add('switching');
+        setTimeout(() => {
+          msgIndex = (msgIndex + 1) % messages.length;
+          statusEl.textContent = messages[msgIndex];
+          statusEl.classList.remove('switching');
+        }, 150);
+      }, 650);
+
+    } else if (systemKey === 'filebridge') {
+      const overlay = document.getElementById('fbLaunchOverlay');
+      overlay.style.display = 'flex';
+      void overlay.offsetWidth; // Force reflow
+      overlay.classList.add('active');
+
+      // Dynamically populate 40 particles inside #fb-splash-particles
+      const particlesContainer = document.getElementById('fb-splash-particles');
+      particlesContainer.innerHTML = ''; // clear first
+      for (let i = 0; i < 40; i++) {
+        const p = document.createElement('div');
+        p.className = 'fb-splash-particle';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.top = Math.random() * 100 + 'vh';
+        const size = Math.random() * 3 + 1;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.animationDuration = (Math.random() * 5 + 5) + 's';
+        p.style.animationDelay = (Math.random() * 2) + 's';
+        particlesContainer.appendChild(p);
+      }
+
+      // Smooth progress animation over 1.6 seconds (1600ms)
+      const duration = 1600;
+      const start = performance.now();
+      const bar = document.getElementById('fb-splash-bar');
+      const counter = document.getElementById('fb-splash-counter');
+
+      function updateFBProgress(time) {
+        let elapsed = time - start;
+        let progress = Math.min(1, Math.max(0, elapsed / duration));
+        let percent = Math.floor(progress * 100);
+        
+        counter.innerText = percent + "%";
+        bar.style.width = percent + "%";
+
+        if (progress < 1) {
+          activeAnimationId = requestAnimationFrame(updateFBProgress);
+        }
+      }
+      activeAnimationId = requestAnimationFrame(updateFBProgress);
+    }
+  }
+</script>
+</body>
+</html>

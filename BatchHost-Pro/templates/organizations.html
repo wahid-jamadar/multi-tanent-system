@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% set active_page = "organizations" %}
+{% block title %}Organizations{% endblock %}
+{% block page_title %}Organizations{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-heading">Organizations</div>
+    <div class="page-subtitle">Companies and groups using this monitoring system</div>
+  </div>
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <input type="text" id="orgSearch" placeholder="Search by name..." oninput="renderOrganizations()" style="height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg2); color: var(--text1);">
+    <button class="btn btn-primary" style="height: 36px;" onclick="openAddModal()">Add Organization</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Users</th>
+          <th>Agents</th>
+          <th>Created</th>
+          <th style="text-align:center">Edit</th>
+          <th style="text-align:center">Status</th>
+          <th style="text-align:center">Delete</th>
+        </tr>
+      </thead>
+      <tbody id="orgTable">
+        <tr>
+          <td colspan="7" style="text-align:center;padding:40px;color:var(--text3)">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-overlay" id="orgModal">
+  <div class="modal" style="width:620px;">
+    <div class="modal-title" id="modalTitle">Add Organization</div>
+    <input type="hidden" id="orgId">
+    <div class="form-row">
+      <label>Name</label>
+      <input type="text" id="orgName" placeholder="Organization name">
+    </div>
+    <div id="agentsRow" style="display:none;">
+      <div class="form-row">
+        <label>Add Agents</label>
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;">
+          <select id="availableAgents"></select>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="addSelectedAgent()">Add</button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="addAllAgents()">Add All</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Organization Agents</label>
+        <div id="assignedAgents"
+          style="display:grid;gap:6px;max-height:190px;overflow:auto;border:1px solid var(--border);border-radius:7px;padding:8px;background:var(--bg3);">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveOrg()">Save</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let organizations = [];
+  let agents = [];
+  let selectedAgentIds = new Set();
+
+  function renderOrganizations() {
+    const searchInput = document.getElementById('orgSearch');
+    const query = searchInput ? searchInput.value.toLowerCase() : '';
+
+    // Sort organizations: Global Organization first, then alphabetically
+    organizations.sort((a, b) => {
+      const nameA = (a.name || '').trim();
+      const nameB = (b.name || '').trim();
+      const isGlobalA = nameA.toLowerCase() === 'global organization';
+      const isGlobalB = nameB.toLowerCase() === 'global organization';
+      
+      if (isGlobalA && !isGlobalB) return -1;
+      if (!isGlobalA && isGlobalB) return 1;
+      return nameA.localeCompare(nameB);
+    });
+
+    const filteredOrganizations = query 
+      ? organizations.filter(o => (o.name || '').toLowerCase().includes(query))
+      : organizations;
+
+    const tbody = document.getElementById('orgTable');
+    if (!filteredOrganizations.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">O</div><p>No organizations found</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = filteredOrganizations.map(o => {
+      const isGlobal = (o.name || '').trim().toLowerCase() === 'global organization';
+      return `
+    <tr>
+      <td><div class="td-name">${escapeHtml(o.name)}</div>${o.is_default ? '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Default</div>' : ''}</td>
+      <td style="font-family:var(--mono)">
+        ${o.users_count || 0}
+      </td>
+      <td style="font-family:var(--mono)">${o.agents_count || 0}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${fmtDT(o.created_at)}</td>
+      <td style="text-align:center">
+        <button class="btn btn-secondary btn-sm" onclick="openEditById('${escapeAttr(o.id)}')">Edit</button>
+      </td>
+      <td style="text-align:center">
+        ${o.status === 'disabled' ? `
+          <button class="btn btn-success btn-sm" 
+            style="background:var(--accent); color:white; border:none;"
+            onclick="toggleOrgStatus('${escapeAttr(o.id)}', 'active')">
+            Enable
+          </button>
+        ` : `
+          <button class="btn btn-danger btn-sm" onclick="toggleOrgStatus('${escapeAttr(o.id)}', 'disabled')">
+            Disable
+          </button>
+        `}
+      </td>
+      <td style="text-align:center">
+        <button class="btn btn-danger btn-sm" 
+          ${isGlobal ? 'disabled style="opacity:0.5; filter:blur(0.5px); cursor:not-allowed;"' : `onclick="deleteOrg('${escapeAttr(o.id)}', '${escapeHtml(o.name)}')"`}>
+          Delete
+        </button>
+      </td>
+    </tr>`}).join('');
+  }
+
+  async function loadOrganizations() {
+    const r = await fetch('/api/organizations');
+    organizations = await r.json();
+    renderOrganizations();
+  }
+
+  async function loadAgents() {
+    const r = await fetch('/api/agents');
+    agents = await r.json();
+  }
+
+  function openAddModal() {
+    document.getElementById('modalTitle').textContent = 'Add Organization';
+    document.getElementById('orgId').value = '';
+    document.getElementById('orgName').value = '';
+    selectedAgentIds = new Set();
+    document.getElementById('agentsRow').style.display = 'none';
+    document.getElementById('orgModal').classList.add('open');
+  }
+
+  function openEditById(id) {
+    const org = organizations.find(o => o.id === id);
+    if (org) openEdit(org);
+  }
+
+  function openEdit(org) {
+    document.getElementById('modalTitle').textContent = 'Edit Organization';
+    document.getElementById('orgId').value = org.id;
+    document.getElementById('orgName').value = org.name || '';
+    selectedAgentIds = new Set(agents.filter(a => a.organization_id === org.id).map(a => a.id));
+    document.getElementById('agentsRow').style.display = 'block';
+    renderAgentPicker();
+    document.getElementById('orgModal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('orgModal').classList.remove('open'); }
+  document.getElementById('orgModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+  function renderAgentPicker() {
+    const available = agents.filter(a => !selectedAgentIds.has(a.id));
+    const assigned = agents.filter(a => selectedAgentIds.has(a.id));
+    const select = document.getElementById('availableAgents');
+    select.innerHTML = available.length
+      ? available.map(a => `<option value="${escapeAttr(a.id)}">${escapeHtml(agentLabel(a))}</option>`).join('')
+      : '<option value="">No available agents</option>';
+    select.disabled = !available.length;
+    document.getElementById('assignedAgents').innerHTML = assigned.length
+      ? assigned.map(a => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 9px;">
+          <div style="min-width:0;">
+            <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(a.hostname || a.id)}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(a.id)}</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="removeAgent('${escapeAttr(a.id)}')">Remove</button>
+        </div>`).join('')
+      : '<div style="color:var(--text3);font-size:12px;padding:8px;">No agents added yet</div>';
+  }
+
+  function agentLabel(agent) {
+    const org = organizations.find(o => o.id === agent.organization_id);
+    const orgName = org ? ` - ${org.name}` : '';
+    return `${agent.hostname || agent.id}${orgName}`;
+  }
+
+  function addSelectedAgent() {
+    const id = document.getElementById('availableAgents').value;
+    if (!id) return;
+    selectedAgentIds.add(id);
+    renderAgentPicker();
+  }
+
+  function addAllAgents() {
+    agents.forEach(a => selectedAgentIds.add(a.id));
+    renderAgentPicker();
+  }
+
+  function removeAgent(id) {
+    selectedAgentIds.delete(id);
+    renderAgentPicker();
+  }
+
+  async function saveOrg() {
+    const id = document.getElementById('orgId').value;
+    const payload = { name: document.getElementById('orgName').value.trim() };
+    if (id) payload.agent_ids = Array.from(selectedAgentIds);
+    const r = await fetch(id ? `/api/organizations/${id}` : '/api/organizations', {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.success) {
+      flash('Organization saved', 'success');
+      closeModal();
+      await loadAgents();
+      loadOrganizations();
+    }
+    else flash(d.error || 'Unable to save organization', 'error');
+  }
+
+  async function disableOrg(id, name) {
+    if (!confirm(`Disable organization "${name}"? Its viewers will no longer be able to sign in.`)) return;
+    const r = await fetch(`/api/organizations/${id}`, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.success) { flash('Organization disabled', 'success'); loadOrganizations(); }
+    else flash(d.error || 'Unable to disable organization', 'error');
+  }
+
+  // toggle for enable-disable organization
+  async function toggleOrgStatus(id, newStatus) {
+    const actionText = newStatus === 'disabled' ? 'disable' : 'enable';
+
+    if (!confirm(`Are you sure you want to ${actionText} this organization?`)) return;
+
+    try {
+      const r = await fetch(`/api/organizations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      const d = await r.json();
+
+      if (d.success) {
+        flash(`Organization ${actionText}d`, 'success');
+
+        // Update UI instantly
+        organizations = organizations.map(o =>
+          o.id === id ? { ...o, status: newStatus } : o
+        );
+
+        loadOrganizations(); // re-render
+      } else {
+        flash(d.error || 'Action failed', 'error');
+      }
+
+    } catch (err) {
+      console.error(err);
+      flash('Server error', 'error');
+    }
+  }
+
+  // delete organization button in UI
+  async function deleteOrg(id, name) {
+    if (!confirm(`Are You Sure You Want To Delete "${name}" Organization Permanently?`)) return;
+
+    try {
+      const r = await fetch(`/api/organizations/${id}`, {
+        method: 'DELETE'
+      });
+
+      const d = await r.json();
+
+      if (d.success) {
+        flash('Organization deleted', 'success');
+
+        // REMOVE FROM UI
+        organizations = organizations.filter(o => o.id !== id);
+        loadOrganizations();
+
+      } else {
+        flash(d.error || 'Delete failed', 'error');
+      }
+
+    } catch (err) {
+      console.error(err);
+      flash('Server error', 'error');
+    }
+  }
+
+  function disableOrgById(id) {
+    const org = organizations.find(o => o.id === id);
+    if (org) disableOrg(org.id, org.name);
+  }
+
+  function fmtDT(iso) {
+    if (!iso) return '-';
+    const d = new Date(iso);
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/`/g, '&#96;');
+  }
+
+  Promise.all([loadOrganizations(), loadAgents()]);
+</script>
+{% endblock %}

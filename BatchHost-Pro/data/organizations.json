@@ -1,0 +1,66 @@
+[
+  {
+    "id": "26d5ea9b-34bf-432c-80cf-560d619d7ebd",
+    "name": "Global Organization",
+    "status": "active",
+    "is_default": true,
+    "created_at": "2026-04-27T20:26:07.791823"
+  },
+  {
+    "id": "559ed3cc-13c4-45d7-b08b-c5602c85d0bd",
+    "name": "LIST Software Pvt Ltd",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-04T10:46:38.089556"
+  },
+  {
+    "id": "3e3b8c42-5ab7-48eb-b3c3-fec660d8e341",
+    "name": "Pune Merchant Co-operative Bank, Pune.",
+    "status": "active",
+    "logo": "/images/pune_merchant_bank_logo.jpg",
+    "is_default": false,
+    "created_at": "2026-05-09T16:37:03.173827"
+  },
+  {
+    "id": "3f82ed2b-cd18-4e0d-a534-9ad795ba68a8",
+    "name": "Manmandir Bank",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:37:33.539960"
+  },
+  {
+    "id": "4ca47748-5f59-42f6-9ee1-a3be80c992b4",
+    "name": "Kolhapur Urban Bank, Kolhapur.",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:38:01.740709"
+  },
+  {
+    "id": "08665f0c-59fe-4e1d-a393-de02c27555b7",
+    "name": "Sangli Urban Bank, Sangli.",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:38:25.620034"
+  },
+  {
+    "id": "dbee1af9-230b-41fd-a5d6-9b752128d843",
+    "name": "Kumbhi Bank",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:38:51.947897"
+  },
+  {
+    "id": "784b712f-a536-4f54-a79f-78f2b8d13698",
+    "name": "Baliraja Bank",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-09T16:39:07.934286"
+  },
+  {
+    "id": "7bb91de9-bce1-4546-9420-4b67952560ae",
+    "name": "Bailhongal Urban Co-op Bank Ltd",
+    "status": "active",
+    "is_default": false,
+    "created_at": "2026-05-14T10:17:13.394517"
+  }
+]

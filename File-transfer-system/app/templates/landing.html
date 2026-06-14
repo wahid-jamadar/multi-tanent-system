@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FileBridge - Enterprise Infrastructure Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+</head>
+<body class="landing-body overflow-x-hidden">
+
+  <!-- Animated Background -->
+  <div class="landing-bg">
+    <div class="cyber-grid"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <!-- Landing Navbar -->
+  <nav class="navbar landing-nav py-3 position-relative z-3">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="FileBridge" height="32" class="landing-logo">
+        <span class="text-white fw-bold fs-4 ms-n2">FileBridge</span>
+      </a>
+      <div class="d-flex gap-3">
+        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-landing rounded-pill px-4 fw-medium border-secondary border-opacity-25 text-white">Sign In</a>
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-landing rounded-pill px-4 fw-medium">Access Platform</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <div class="container position-relative z-2 min-vh-100 d-flex align-items-center pt-5 pb-5 mt-n5">
+    <div class="row w-100 align-items-center gy-5">
+      
+      <!-- Left side: Illustration -->
+      <div class="col-lg-6 pe-lg-5 order-2 order-lg-1 hero-illustration">
+        <div class="cyber-illustration position-relative">
+          <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-100 h-auto filter-drop-shadow">
+            <!-- Central Node -->
+            <circle cx="200" cy="200" r="40" fill="rgba(59, 130, 246, 0.1)" stroke="var(--fb-primary)" stroke-width="2" class="pulse-anim"/>
+            <circle cx="200" cy="200" r="25" fill="var(--fb-primary)" class="pulse-inner"/>
+            <path d="M190 200h20M200 190v20" stroke="white" stroke-width="3" stroke-linecap="round"/>
+            
+            <!-- Nodes -->
+            <g class="network-nodes">
+              <!-- Top Node -->
+              <line x1="200" y1="160" x2="200" y2="80" stroke="rgba(59, 130, 246, 0.4)" stroke-width="2" stroke-dasharray="4 4" class="line-anim"/>
+              <circle cx="200" cy="80" r="15" fill="rgba(16, 185, 129, 0.2)" stroke="var(--fb-success)" stroke-width="2"/>
+              <rect x="194" y="74" width="12" height="12" rx="2" fill="var(--fb-success)"/>
+              
+              <!-- Bottom Right Node -->
+              <line x1="230" y1="230" x2="320" y2="300" stroke="rgba(59, 130, 246, 0.4)" stroke-width="2" stroke-dasharray="4 4" class="line-anim"/>
+              <circle cx="320" cy="300" r="15" fill="rgba(6, 182, 212, 0.2)" stroke="var(--fb-cyan)" stroke-width="2"/>
+              <circle cx="320" cy="300" r="6" fill="var(--fb-cyan)"/>
+              
+              <!-- Bottom Left Node -->
+              <line x1="170" y1="230" x2="80" y2="300" stroke="rgba(59, 130, 246, 0.4)" stroke-width="2" stroke-dasharray="4 4" class="line-anim"/>
+              <circle cx="80" cy="300" r="15" fill="rgba(239, 68, 68, 0.2)" stroke="var(--fb-danger)" stroke-width="2"/>
+              <path d="M76 300l4-4 4 4-4 4-4-4z" fill="var(--fb-danger)"/>
+              
+              <!-- Top Left Node -->
+              <line x1="170" y1="170" x2="80" y2="100" stroke="rgba(59, 130, 246, 0.4)" stroke-width="2" stroke-dasharray="4 4" class="line-anim"/>
+              <circle cx="80" cy="100" r="15" fill="rgba(139, 92, 246, 0.2)" stroke="var(--fb-indigo)" stroke-width="2"/>
+              <circle cx="80" cy="100" r="6" fill="var(--fb-indigo)"/>
+              
+              <!-- Top Right Node -->
+              <line x1="230" y1="170" x2="320" y2="100" stroke="rgba(59, 130, 246, 0.4)" stroke-width="2" stroke-dasharray="4 4" class="line-anim"/>
+              <circle cx="320" cy="100" r="15" fill="rgba(245, 158, 11, 0.2)" stroke="var(--fb-warning)" stroke-width="2"/>
+              <circle cx="320" cy="100" r="6" fill="var(--fb-warning)"/>
+            </g>
+            
+            <!-- Orbit Rings -->
+            <circle cx="200" cy="200" r="120" stroke="rgba(255,255,255,0.05)" stroke-width="1" fill="none" class="spin-slow"/>
+            <circle cx="200" cy="200" r="160" stroke="rgba(255,255,255,0.02)" stroke-width="1" fill="none" class="spin-slow-reverse"/>
+            
+            <!-- Data Packets -->
+            <circle cx="200" cy="120" r="3" fill="var(--fb-primary)" class="packet-1"/>
+            <circle cx="275" cy="265" r="3" fill="var(--fb-cyan)" class="packet-2"/>
+            <circle cx="125" cy="265" r="3" fill="var(--fb-success)" class="packet-3"/>
+          </svg>
+          <div class="glass-panel position-absolute bottom-0 start-0 p-3 float-anim-1" style="max-width: 200px; transform: translate(-10%, 10%); background: rgba(3,7,18,0.7) !important;">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="live-indicator"></span>
+              <span class="x-small text-success fw-bold">SYSTEM ONLINE</span>
+            </div>
+            <div class="fw-bold text-white fs-5">99.99%</div>
+            <div class="small text-secondary">Uptime SLA</div>
+          </div>
+          <div class="glass-panel position-absolute top-0 end-0 p-3 float-anim-2" style="max-width: 200px; transform: translate(10%, -10%); background: rgba(3,7,18,0.7) !important;">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="var(--fb-primary)" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/></svg>
+              <span class="x-small text-primary fw-bold">ACTIVE SYNC</span>
+            </div>
+            <div class="progress" style="height: 4px; background: rgba(255,255,255,0.1);">
+              <div class="progress-bar bg-primary progress-anim" style="width: 75%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side: Content -->
+      <div class="col-lg-6 order-1 order-lg-2 hero-content">
+        <div class="badge rounded-pill border border-primary border-opacity-25 bg-primary bg-opacity-10 text-primary px-3 py-2 mb-4 d-inline-flex align-items-center gap-2 hero-badge">
+          <span class="live-indicator bg-primary"></span>
+          FileBridge v2.0 Enterprise
+        </div>
+        <h1 class="display-4 fw-bolder text-white mb-4 hero-title" style="letter-spacing: -1px; line-height: 1.1;">
+          Secure Infrastructure <br>
+          <span class="text-transparent bg-clip-text bg-gradient-primary">File Operations</span> Platform
+        </h1>
+        <p class="lead text-secondary mb-5 hero-subtitle" style="max-width: 90%;">
+          Manage, synchronize, and orchestrate file operations across distributed infrastructure environments with military-grade precision and speed.
+        </p>
+        
+        <div class="d-flex flex-wrap gap-3 mb-5 hero-actions">
+          <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg rounded-pill px-5 d-flex align-items-center gap-2 shadow-lg btn-landing-primary">
+            Access Platform
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+            </svg>
+          </a>
+          <a href="#features" class="btn btn-outline-secondary btn-lg rounded-pill px-5 btn-landing text-white">
+            Learn More
+          </a>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="row g-3 hero-metrics">
+          <div class="col-6 col-sm-3">
+            <div class="metric-mini">
+              <h4 class="fw-bold text-white mb-0">2K+</h4>
+              <span class="x-small text-secondary text-uppercase fw-bold">Connected Servers</span>
+            </div>
+          </div>
+          <div class="col-6 col-sm-3">
+            <div class="metric-mini">
+              <h4 class="fw-bold text-primary mb-0">15M</h4>
+              <span class="x-small text-secondary text-uppercase fw-bold">Active Sync Jobs</span>
+            </div>
+          </div>
+          <div class="col-6 col-sm-3">
+            <div class="metric-mini">
+              <h4 class="fw-bold text-cyan mb-0">5B+</h4>
+              <span class="x-small text-secondary text-uppercase fw-bold">File Operations</span>
+            </div>
+          </div>
+          <div class="col-6 col-sm-3">
+            <div class="metric-mini">
+              <h4 class="fw-bold text-success mb-0">100%</h4>
+              <span class="x-small text-secondary text-uppercase fw-bold">System Health</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div id="features" class="container position-relative z-2 pb-5 mb-5">
+    <div class="text-center mb-5 feature-header">
+      <h2 class="h3 fw-bold text-white mb-3">Enterprise-Grade Capabilities</h2>
+      <p class="text-secondary max-w-md mx-auto">Everything you need to orchestrate file operations across your entire fleet.</p>
+    </div>
+    
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="feature-card glass-panel h-100 p-4" style="background: rgba(3,7,18,0.6) !important;">
+          <div class="feature-icon mb-3 rounded-circle d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary" style="width: 48px; height: 48px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h2.764c.958 0 1.76.56 2.311 1.184C7.985 3.648 8.48 4 9 4h4.5A1.5 1.5 0 0 1 15 5.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9zM2.5 3a.5.5 0 0 0-.5.5V6h12v-.5a.5.5 0 0 0-.5-.5H9c-.964 0-1.71-.629-2.174-1.154C6.374 3.334 5.82 3 5.264 3H2.5zM14 7H2v5.5a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V7z"/></svg>
+          </div>
+          <h3 class="h6 fw-bold text-white mb-2">Multi-Server Sync</h3>
+          <p class="small text-secondary mb-0">Bi-directional and unidirectional synchronization across unlimited nodes.</p>
+        </div>
+      </div>
+      
+      <div class="col-md-6 col-lg-3">
+        <div class="feature-card glass-panel h-100 p-4" style="background: rgba(3,7,18,0.6) !important;">
+          <div class="feature-icon mb-3 rounded-circle d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success" style="width: 48px; height: 48px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/></svg>
+          </div>
+          <h3 class="h6 fw-bold text-white mb-2">Secure Transfer</h3>
+          <p class="small text-secondary mb-0">End-to-end encrypted payloads with cryptographic integrity verification.</p>
+        </div>
+      </div>
+      
+      <div class="col-md-6 col-lg-3">
+        <div class="feature-card glass-panel h-100 p-4" style="background: rgba(3,7,18,0.6) !important;">
+          <div class="feature-icon mb-3 rounded-circle d-inline-flex align-items-center justify-content-center bg-cyan bg-opacity-10 text-cyan" style="width: 48px; height: 48px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M14 3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h12zM2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H2z"/><path d="M2 5.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zM5 5.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-1z"/></svg>
+          </div>
+          <h3 class="h6 fw-bold text-white mb-2">Detailed Logging</h3>
+          <p class="small text-secondary mb-0">Comprehensive audit trails and real-time infrastructure event streams.</p>
+        </div>
+      </div>
+      
+      <div class="col-md-6 col-lg-3">
+        <div class="feature-card glass-panel h-100 p-4" style="background: rgba(3,7,18,0.6) !important;">
+          <div class="feature-icon mb-3 rounded-circle d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 text-warning" style="width: 48px; height: 48px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v1h12V4a1 1 0 0 0-1-1H2Zm12 3H2v6a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6Z"/><path d="M2 7h1v1H2V7Zm0 2h1v1H2V9Zm2-2h1v1H4V7Zm0 2h1v1H4V9Zm2-2h1v1H6V7Zm0 2h1v1H6V9Zm2-2h1v1H8V7Zm0 2h1v1H8V9Zm2-2h1v1h-1V7Zm0 2h1v1h-1V9Zm2-2h1v1h-1V7Zm0 2h1v1h-1V9Z"/></svg>
+          </div>
+          <h3 class="h6 fw-bold text-white mb-2">Cross-Platform</h3>
+          <p class="small text-secondary mb-0">Native agents for Linux, Windows, and macOS with unified control.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Add motion using Motion One library via CDN for the Framer Motion feel -->
+  <script type="module">
+    import { animate, stagger, inView } from "https://cdn.jsdelivr.net/npm/motion@11.11.13/+esm";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Hero sequence
+      animate(".hero-badge", { opacity: [0, 1], y: [20, 0] }, { duration: 0.6, delay: 0.2 });
+      animate(".hero-title", { opacity: [0, 1], y: [20, 0] }, { duration: 0.6, delay: 0.3 });
+      animate(".hero-subtitle", { opacity: [0, 1], y: [20, 0] }, { duration: 0.6, delay: 0.4 });
+      animate(".hero-actions", { opacity: [0, 1], y: [20, 0] }, { duration: 0.6, delay: 0.5 });
+      animate(".hero-metrics .metric-mini", { opacity: [0, 1], y: [20, 0] }, { duration: 0.6, delay: stagger(0.1, { startDelay: 0.6 }) });
+      
+      // Illustration sequence
+      animate(".hero-illustration", { opacity: [0, 1], x: [40, 0] }, { duration: 0.8, delay: 0.4 });
+      
+      // Features sequence on scroll
+      inView(".feature-header", ({ target }) => {
+        animate(target, { opacity: [0, 1], y: [20, 0] }, { duration: 0.6 });
+      });
+      
+      inView(".feature-card", (info) => {
+        animate(info.target, { opacity: [0, 1], y: [30, 0] }, { duration: 0.6, delay: info.index * 0.1 });
+      });
+
+      // Simple particle system
+      const container = document.getElementById('particles');
+      for(let i=0; i<30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + 'vw';
+        particle.style.top = Math.random() * 100 + 'vh';
+        particle.style.opacity = Math.random() * 0.5;
+        particle.style.transform = `scale(${Math.random() * 2})`;
+        particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        particle.style.animationDelay = (Math.random() * 5) + 's';
+        container.appendChild(particle);
+      }
+    });
+  </script>
+</body>
+</html>

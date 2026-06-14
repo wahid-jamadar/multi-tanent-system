@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% set active_page = "settings" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-heading">Settings</div>
+    <div class="page-subtitle">Configure email alerts and agent notification rules</div>
+  </div>
+</div>
+
+<div class="two-column-grid" style="margin-bottom:16px;">
+  <!-- Email Config -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Email Configuration</div>
+      <div id="emailStatus" style="font-size:12px;color:var(--text3);font-family:var(--mono)">Disabled</div>
+    </div>
+    <div class="form-row">
+      <label>Enable Email Alerts</label>
+      <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;">
+        <input type="checkbox" id="emailEnabled" style="width:auto;" onchange="updateEmailStatus()">
+        <span style="font-size:13px;color:var(--text2)">Send email on FAILED/OFFLINE events</span>
+      </label>
+    </div>
+    <div class="form-row"><label>SMTP Host</label><input type="text" id="smtpHost" placeholder="smtp.gmail.com"></div>
+    <div class="form-row"><label>SMTP Port</label><input type="text" id="smtpPort" placeholder="587"></div>
+    <div class="form-row"><label>SMTP Username</label><input type="text" id="smtpUser" placeholder="alerts@yourcompany.com"></div>
+    <div class="form-row"><label>SMTP Password</label><input type="password" id="smtpPass" placeholder="App password"></div>
+    <div class="form-row">
+      <label>Alert Recipients (comma-separated)</label>
+      <input type="text" id="emailRecipients" placeholder="admin@co.com, ops@co.com">
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()">Save Email Settings</button>
+  </div>
+
+  <!-- Agent Alert Config -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Agent Alert Configuration</div>
+    </div>
+    <div class="form-row">
+      <label>Alert Email per Agent</label>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Configure machine-specific alert recipients</div>
+      <div id="agentEmailList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <button class="btn btn-secondary" onclick="loadAgentEmails()">Reload Agents</button>
+  </div>
+</div>
+
+<!-- Alert Rules -->
+<div class="card">
+  <div class="card-header"><div class="card-title">Alert Rules</div></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span class="badge red">CRITICAL</span>
+        <span style="font-weight:700;font-size:13px">AGENT_OFFLINE</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Triggered when no heartbeat received for <strong>30 seconds</strong>. Sends email alert immediately.</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span class="badge red">ERROR</span>
+        <span style="font-weight:700;font-size:13px">SCRIPT_FAILED</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Triggered when a script exits with non-zero exit code. Includes exit code in alert.</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span class="badge yellow">WARNING</span>
+        <span style="font-weight:700;font-size:13px">HIGH_CPU</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Triggered when agent CPU exceeds <strong>90%</strong> for more than 60 seconds (configurable).</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span class="badge yellow">WARNING</span>
+        <span style="font-weight:700;font-size:13px">HIGH_MEMORY</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Triggered when agent memory exceeds <strong>90%</strong> (configurable threshold).</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span class="badge blue">INFO</span>
+        <span style="font-weight:700;font-size:13px">AGENT_ONLINE</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Informational alert when an offline agent reconnects and resumes heartbeat.</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span class="badge green">OK</span>
+        <span style="font-weight:700;font-size:13px">SCRIPT_COMPLETED</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Optional success notification when a script completes with exit code 0.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadSettings() {
+  try {
+    const r = await fetch('/api/settings');
+    const d = await r.json();
+    const em = d.email || {};
+    document.getElementById('emailEnabled').checked = !!em.enabled;
+    document.getElementById('smtpHost').value = em.smtp_host||'';
+    document.getElementById('smtpPort').value = em.smtp_port||'587';
+    document.getElementById('smtpUser').value = em.smtp_user||'';
+    document.getElementById('smtpPass').value = em.smtp_pass||'';
+    document.getElementById('emailRecipients').value = (em.recipients||[]).join(', ');
+    updateEmailStatus();
+  } catch(e) {}
+}
+
+function updateEmailStatus() {
+  const en = document.getElementById('emailEnabled').checked;
+  document.getElementById('emailStatus').textContent = en ? 'OK Enabled' : 'Disabled';
+  document.getElementById('emailStatus').style.color = en ? 'var(--green)' : 'var(--text3)';
+}
+
+async function saveSettings() {
+  const recipients = document.getElementById('emailRecipients').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const payload = {
+    email: {
+      enabled: document.getElementById('emailEnabled').checked,
+      smtp_host: document.getElementById('smtpHost').value.trim(),
+      smtp_port: document.getElementById('smtpPort').value.trim()||'587',
+      smtp_user: document.getElementById('smtpUser').value.trim(),
+      smtp_pass: document.getElementById('smtpPass').value,
+      recipients
+    }
+  };
+  const r = await fetch('/api/settings', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const d = await r.json();
+  if(d.success) flash('Settings saved!','success');
+  else flash('Error saving settings','error');
+}
+
+async function loadAgentEmails() {
+  try {
+    const [ar, sr] = await Promise.all([fetch('/api/agents'), fetch('/api/settings')]);
+    const agents = await ar.json();
+    const settings = await sr.json();
+    const agentAlerts = (settings.agent_alerts)||{};
+    const container = document.getElementById('agentEmailList');
+    if (agents.length === 0) {
+      container.innerHTML = '<div style="font-size:12px;color:var(--text3)">No agents registered</div>';
+      return;
+    }
+    container.innerHTML = agents.map(a => `
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:24px;text-align:center">${a.os_type==='windows'?'W':'L'}</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text2);width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.hostname}</div>
+        <input type="email" placeholder="agent@email.com" value="${agentAlerts[a.id]||''}"
+               id="ae-${a.id}" style="flex:1;font-size:12px;padding:6px 10px;">
+        <button class="btn btn-secondary btn-sm" onclick="saveAgentEmail('${a.id}')">Save</button>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function saveAgentEmail(agentId) {
+  const email = document.getElementById(`ae-${agentId}`).value.trim();
+  const r = await fetch('/api/settings');
+  const settings = await r.json();
+  settings.agent_alerts = settings.agent_alerts || {};
+  settings.agent_alerts[agentId] = email;
+  await fetch('/api/settings', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({agent_alerts:settings.agent_alerts})});
+  flash('Agent email saved','success');
+}
+
+loadSettings();
+loadAgentEmails();
+</script>
+{% endblock %}

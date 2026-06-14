@@ -1,0 +1,6 @@
+2026-06-04 17:48:42,013 DEBUG - Starting WinSW in console mode
+2026-06-04 17:48:42,046 INFO  - Stopping service 'FileBridge Agent (FileBridgeAgent)'...
+2026-06-04 17:48:42,108 INFO  - Service 'FileBridge Agent (FileBridgeAgent)' stopped successfully.
+2026-06-04 17:48:43,645 DEBUG - Starting WinSW in console mode
+2026-06-04 17:48:43,673 INFO  - Uninstalling service 'FileBridge Agent (FileBridgeAgent)'...
+2026-06-04 17:48:43,678 INFO  - Service 'FileBridge Agent (FileBridgeAgent)' was uninstalled successfully.

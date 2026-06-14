@@ -1,0 +1,23 @@
+<service>
+  <id>BatchHost-Pro_Agent</id>
+  <name>BatchHost-Pro Agent</name>
+  <description>Event-driven agent runtime for BatchHost-Pro. Runs continuously in the background to execute scripts without UI.</description>
+  
+  <executable>%BASE%\batchhost-pro_agent.bat</executable>
+  <arguments></arguments>
+  <workingdirectory>%BASE%</workingdirectory>
+  
+  <!-- Log configuration -->
+  <logpath>%BASE%\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold> <!-- 10 MB per file -->
+    <keepFiles>8</keepFiles>
+  </log>
+
+  <!-- Restart policy on crash/failure -->
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="30 sec"/>
+  <resetfailure>1 hour</resetfailure>
+  
+  <startmode>Automatic</startmode>
+</service>

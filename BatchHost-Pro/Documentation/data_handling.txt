@@ -1,0 +1,535 @@
+================================================================================
+                  BATCHHOST-PRO — DATA HANDLING DOCUMENT
+================================================================================
+
+Document Version:  1.0
+Created:           May 2026
+Audience:          Developers, System Administrators, Auditors
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+  1.  Overview
+  2.  Storage Architecture
+  3.  Data Files & Their Contents
+  4.  Read / Write Operations
+  5.  Concurrency & Thread Safety
+  6.  Data Integrity & Atomic Writes
+  7.  Data Flow — How Data Moves Through the System
+  8.  Organization-Based Data Isolation (Multi-Tenancy)
+  9.  Authentication & Session Data
+  10. Password Security & Hashing
+  11. Agent Token Security
+  12. Logging & Audit Trail
+  13. Data Retention & Cleanup
+  14. Backup & Recovery
+  15. Data Initialization & Self-Repair
+  16. Real-Time Data Broadcasting (WebSockets)
+  17. Data Export Formats
+  18. Sensitive Data Handling
+
+================================================================================
+1. OVERVIEW
+================================================================================
+
+BatchHost-Pro uses a file-based JSON storage model for all persistent data.
+No external database engine (SQL, NoSQL, etc.) is required. All data resides
+on the server's local file system under the project directory structure.
+
+This approach was chosen for:
+  - Zero external dependencies for data storage
+  - Easy portability and backup (simple file copy)
+  - Human-readable data format for debugging
+  - Lightweight deployment without database configuration
+
+================================================================================
+2. STORAGE ARCHITECTURE
+================================================================================
+
+All data is organized into three primary directories:
+
+  PROJECT ROOT
+  |
+  |-- data/              Structured JSON data files (core system state)
+  |-- logs/              Chronological log files (server + agent activity)
+  |-- backup/            Backup snapshot files (.txt format)
+
+These directories are automatically created at server startup if they do
+not already exist.
+
+Path Configuration (from server.py):
+  BASE_DIR   = <project root directory>
+  DATA_DIR   = BASE_DIR/data
+  LOG_DIR    = BASE_DIR/logs
+  BACKUP_DIR = BASE_DIR/backup
+
+================================================================================
+3. DATA FILES & THEIR CONTENTS
+================================================================================
+
+All core data is stored as JSON arrays or objects in the data/ directory:
+
+  FILE NAME                  | CONTENTS
+  ---------------------------|-------------------------------------------------
+  agents.json                | All registered agent machines: ID, hostname,
+                             | OS type, status (online/offline), CPU/memory
+                             | usage, last heartbeat, organization assignment,
+                             | authentication token, device fingerprint key.
+                             |
+  scripts.json               | All tracked batch scripts: ID, name, file path,
+                             | assigned agent, organization, current status
+                             | (pending/running/completed/failed/terminated/
+                             | timeout/unknown/disabled), execution timestamps,
+                             | exit codes, scheduling configuration, status
+                             | metadata (version, source, reason).
+                             |
+  script_executions.json     | Individual execution records: execution ID,
+                             | script ID, agent ID, organization, PID, state
+                             | (PENDING/STARTING/RUNNING/COMPLETED/FAILED/
+                             | TERMINATED/TIMEOUT), timestamps (created,
+                             | started, last seen, ended), runtime duration,
+                             | CPU/memory readings, exit code, sequence
+                             | number for event ordering.
+                             |
+  execution_events.json      | Raw event log for every execution lifecycle
+                             | event: event ID, execution ID, event type
+                             | (SCRIPT_STARTED, SCRIPT_HEARTBEAT,
+                             | SCRIPT_COMPLETED, SCRIPT_FAILED, etc.),
+                             | sequence number, timestamp, acceptance status,
+                             | rejection reason if applicable.
+                             |
+  alerts.json                | All system alerts: ID, timestamp, severity
+                             | level (CRITICAL/ERROR/WARNING/INFO), alert
+                             | type (AGENT_OFFLINE, SCRIPT_FAILED, HIGH_CPU,
+                             | etc.), agent ID, organization, message,
+                             | email notification status.
+                             |
+  users.json                 | All user accounts: ID, username, email,
+                             | hashed password, role (super_admin /
+                             | organization_admin / organization_viewer),
+                             | organization assignment, account status
+                             | (active/inactive), login timestamps (current
+                             | and previous), total login count, account
+                             | creation date, force logout timestamp.
+                             |
+  organizations.json         | All organization groups: ID, name, status
+                             | (active/disabled), default flag, creation date.
+                             |
+  admin_logs.json            | Admin audit trail: timestamp, admin username,
+                             | action type (Login/Logout/Add/Update/Delete),
+                             | affected module (Users/Scripts/Agents/System),
+                             | affected record, previous and new values,
+                             | IP address, status (success/failure).
+                             |
+  settings.json              | System configuration: SMTP email settings,
+                             | per-agent email alert recipients.
+                             |
+  backup_state.json          | Backup scheduling state and metadata.
+
+================================================================================
+4. READ / WRITE OPERATIONS
+================================================================================
+
+All JSON file operations are handled by two core functions:
+
+  load_json(path, default)
+  -------------------------
+  - Reads a JSON file from disk and parses it into a Python object
+  - Returns the provided default value (empty list []) if the file does
+    not exist or cannot be parsed
+  - Errors are logged but do not crash the server
+  - All reads are wrapped in the DATA_LOCK (see Section 5)
+
+  save_json(path, data)
+  -------------------------
+  - Serializes a Python object to JSON with 2-space indentation
+  - Uses ATOMIC WRITE strategy (see Section 6) to prevent data corruption
+  - All writes are wrapped in the DATA_LOCK (see Section 5)
+
+================================================================================
+5. CONCURRENCY & THREAD SAFETY
+================================================================================
+
+BatchHost-Pro runs multiple concurrent operations:
+  - HTTP request handlers (multiple simultaneous users/agents)
+  - Background heartbeat monitor thread
+  - Background web presence monitor thread
+  - WebSocket event handlers
+
+To prevent race conditions and data corruption, two reentrant locks are used:
+
+  DATA_LOCK  (threading.RLock)
+  ---------------------------------
+  Protects ALL read and write operations to JSON data files. Every call to
+  load_json() and save_json() acquires this lock, ensuring that:
+  - No two threads can write to the same file simultaneously
+  - No thread reads a partially-written file
+  - Nested lock acquisitions within the same thread are allowed (reentrant)
+
+  PRESENCE_LOCK  (threading.RLock)
+  ---------------------------------
+  Protects the in-memory web session presence data (ACTIVE_WEB_SESSIONS
+  and PENDING_LOGOUT dictionaries). This is separate from DATA_LOCK to
+  avoid blocking data file I/O during presence checks.
+
+  ExecutionManager.lock  (threading.RLock)
+  -----------------------------------------
+  The execution tracking module (backend/tracking.py) has its own lock to
+  protect the event-driven execution lifecycle state machine. This ensures
+  that concurrent execution events for the same script are processed
+  sequentially and state transitions are validated atomically.
+
+================================================================================
+6. DATA INTEGRITY & ATOMIC WRITES
+================================================================================
+
+To prevent data file corruption (e.g., if the server crashes mid-write),
+all save operations use an ATOMIC WRITE pattern:
+
+  1. A temporary file is created in the SAME directory as the target file
+     using tempfile.mkstemp() with a ".tmp_" prefix and ".json" suffix.
+  2. The JSON data is written to the temporary file.
+  3. os.replace() is called to atomically rename the temp file to the
+     target file. On most operating systems, os.replace() is an atomic
+     operation — the file is either fully replaced or not at all.
+  4. If any error occurs during writing, the temporary file is deleted
+     (os.unlink) and the exception is re-raised, leaving the original
+     file untouched.
+
+This ensures that a data file is NEVER left in a partially-written state.
+
+================================================================================
+7. DATA FLOW — HOW DATA MOVES THROUGH THE SYSTEM
+================================================================================
+
+7.1  AGENT REGISTRATION FLOW
+    Agent Machine --> POST /api/agent/register --> Server
+      Input:  agent_id, hostname, os_type, device_key
+      Action: Creates/updates agent record in agents.json
+      Output: Authentication token returned to agent
+
+7.2  HEARTBEAT FLOW (Every ~5-30 seconds)
+    Agent Machine --> POST /api/agent/heartbeat --> Server
+      Input:  token, cpu_usage, memory_usage, running_scripts list
+      Action:
+        - Updates agent's last_heartbeat, CPU, memory in agents.json
+        - Compares running_scripts with known scripts in scripts.json
+        - Scripts newly reported as running -> status updated to "running"
+        - Scripts previously running but now absent -> evaluated for failure
+        - Triggers HIGH_CPU/HIGH_MEMORY alerts if thresholds exceeded
+      Output: List of scripts the agent should be monitoring
+
+7.3  SCRIPT EXECUTION EVENT FLOW
+    Agent Machine --> POST /api/agent/execution_event --> Server
+      Input:  event_type, execution_id, script_path, pid, exit_code,
+              sequence_number, cpu, memory, runtime
+      Action:
+        - Event is normalized and validated by ExecutionManager
+        - State machine validates transition (e.g., RUNNING -> COMPLETED)
+        - Sequence number is checked to reject stale/duplicate events
+        - Execution record updated in script_executions.json
+        - Event logged in execution_events.json
+        - Script summary updated in scripts.json
+        - WebSocket broadcast sent to all connected browsers
+      Output: Acceptance status and updated execution state
+
+7.4  SCRIPT STATUS UPDATE FLOW
+    Agent Machine --> POST /api/agent/script_status --> Server
+      Input:  token, script_path, status, exit_code
+      Action:
+        - State transition validated against SCRIPT_TRANSITIONS map
+        - Terminal state protections enforced (completed cannot go to failed)
+        - Status metadata updated (version, source, reason, timestamp)
+        - Alert created if script fails
+      Output: Confirmation of status change
+
+7.5  USER ACTION FLOW (Web Interface)
+    Browser --> API Endpoint --> Server --> JSON File
+      - All CRUD operations on users, scripts, agents, organizations
+        follow the same pattern: load JSON, modify in-memory, save JSON
+      - Admin actions are additionally logged in admin_logs.json
+      - WebSocket events broadcast real-time updates to connected browsers
+
+================================================================================
+8. ORGANIZATION-BASED DATA ISOLATION (MULTI-TENANCY)
+================================================================================
+
+BatchHost-Pro supports multiple organizations from a single installation.
+Data isolation is enforced at the APPLICATION level (not file level):
+
+  - Every record (agent, script, alert, user, execution) carries an
+    "organization_id" field linking it to an organization.
+  - When a non-admin user requests data, the server filters results to
+    show ONLY records matching their organization_id.
+  - Admin (super_admin) users bypass organization filtering and see all
+    data across all organizations.
+
+  Key filtering functions:
+    filter_by_org(records, user)     - Generic organization filter
+    filtered_agents(user)            - Agents for user's organization
+    filtered_scripts(user)           - Scripts for user's organization
+    filtered_executions(user)        - Executions for user's organization
+    filtered_alerts(user)            - Alerts for user's organization
+
+  When an agent is reassigned to a different organization:
+    - The agent's organization_id is updated
+    - ALL scripts belonging to that agent are also updated
+    - ALL alerts belonging to that agent are also updated
+    This cascade ensures data consistency across related records.
+
+================================================================================
+9. AUTHENTICATION & SESSION DATA
+================================================================================
+
+  Session Storage:
+    - Flask server-side sessions (signed cookies)
+    - Session data includes: user_id, login_at timestamp, presence_id
+    - Session secret key is randomly generated on each server start
+      using os.urandom(24).hex()
+
+  Session Lifecycle:
+    - Sessions are valid for 30 minutes (SESSION_TIMEOUT_SECONDS = 1800)
+    - A warning is issued at 25 minutes (SESSION_WARNING_SECONDS = 1500)
+    - Sessions can be extended by user action without re-login
+    - On every request, the system checks:
+        1. Is the session present and not expired?
+        2. Is the user account still active?
+        3. Is the user's organization still active?
+        4. Has the session been invalidated by auto-logout?
+
+  Web Presence Tracking:
+    - Stored in-memory (ACTIVE_WEB_SESSIONS dictionary)
+    - Each browser tab gets a unique presence_id
+    - Browser sends periodic "I'm here" signals
+    - If no signal for 45 seconds -> user marked as absent
+    - After 20-second grace period -> auto-logout recorded and session
+      invalidated via force_logout_at timestamp on the user record
+
+================================================================================
+10. PASSWORD SECURITY & HASHING
+================================================================================
+
+  - Passwords are NEVER stored in plain text
+  - SHA-256 one-way hashing is used: hashlib.sha256(password.encode()).hexdigest()
+  - The hashed password is stored in the "password" field of users.json
+  - During login, the submitted password is hashed and compared against
+    the stored hash — the original password is never recoverable
+  - Password fields are excluded from request logging:
+    safe_data = {k: v for k, v in request.json.items()
+                 if 'password' not in k.lower()}
+  - Passwords are excluded from backup exports for security
+
+================================================================================
+11. AGENT TOKEN SECURITY
+================================================================================
+
+  - Each agent receives a unique authentication token upon registration
+  - Tokens are stored in the agent's record in agents.json
+  - Every API request from an agent must include the token in the
+    "X-Agent-Token" HTTP header
+  - The agent_token_required decorator validates the token on every
+    agent API call and attaches the agent record to the request object
+  - Invalid or missing tokens result in HTTP 401/403 rejection
+  - Token validation is performed before any data processing occurs
+
+================================================================================
+12. LOGGING & AUDIT TRAIL
+================================================================================
+
+  Server Logs (logs/server.log):
+    - All incoming HTTP requests (method, path, IP address)
+    - Request payloads (with passwords redacted)
+    - Response status codes and processing duration
+    - Internal errors with full stack traces
+    - Script status transitions (old -> new, source, reason)
+    - WebSocket events (emit/receive)
+    - Data load/save errors
+    - Session lifecycle events (login, logout, expiry)
+
+  Agent Logs (logs/<agent_id>_<date>.log):
+    - Per-agent, per-day log files
+    - Heartbeat events, script status reports
+    - Written by the append_log() function
+
+  Admin Audit Logs (data/admin_logs.json):
+    - Every admin action through the web interface:
+      Login, Logout, Auto-Logout, Add, Update, Delete, Backup, Settings
+    - Each entry records: who, what, when, from where (IP), and the
+      before/after values of changed data
+    - Can be cleared by admin (the clear action is itself logged first)
+
+  Execution Event Log (data/execution_events.json):
+    - Every lifecycle event for every script execution
+    - Records whether the event was accepted or rejected
+    - Includes rejection reason for debugging
+    - Capped at 10,000 entries (oldest events pruned when limit exceeded)
+
+================================================================================
+13. DATA RETENTION & CLEANUP
+================================================================================
+
+  Execution Events:
+    - The execution_events.json file is capped at 10,000 entries
+    - When the limit is exceeded, the oldest events are removed:
+      del event_store[:-10000]
+    - This prevents unbounded growth of the event log
+
+  Script Deduplication:
+    - At startup and during runtime, the system detects and collapses
+      duplicate script records (same agent + same normalized path)
+    - The most recently active record is kept as the primary
+    - Metadata from duplicates is merged into the primary record
+    - Duplicate IDs are removed from scripts.json
+
+  No Automatic Purging of Core Data:
+    - agents.json, scripts.json, alerts.json, users.json, and
+      organizations.json are NOT automatically purged
+    - Records persist until explicitly deleted by an admin
+    - This ensures a complete historical record for auditing
+
+  Log File Growth:
+    - Server log (server.log) grows continuously — manual rotation
+      or external log management is recommended for production
+    - Agent logs are segmented by date, limiting individual file sizes
+
+================================================================================
+14. BACKUP & RECOVERY
+================================================================================
+
+  Backup Contents:
+    Each backup file (.txt) is a comprehensive snapshot containing:
+      - Organization details (names, statuses, configurations)
+      - All registered agents and their settings
+      - All scripts, paths, statuses, and execution history
+      - All alerts that have been raised
+      - All user accounts (PASSWORDS EXCLUDED for security)
+      - All daily execution log file contents
+
+  Backup Types:
+    - FULL BACKUP:       All data and all log files, no date filtering
+    - 1-DAY BACKUP:      All data, logs/alerts filtered to a single date
+    - DATE-RANGE BACKUP: All data, logs/alerts filtered to a date range
+
+  Backup Storage:
+    - Files are saved in the backup/ directory
+    - File names include: date, time, backup type, organization name
+    - Backups can be downloaded through the web interface
+    - A backup_state.json file tracks scheduling state
+
+  Recovery Process:
+    - Backups are text-based and human-readable
+    - Recovery requires manual restoration of JSON files from backup data
+    - No automated restore-from-backup feature is built in
+
+================================================================================
+15. DATA INITIALIZATION & SELF-REPAIR
+================================================================================
+
+On every server startup, the init_data() function performs:
+
+  1. DEFAULT ORGANIZATION:
+     - If organizations.json does not exist, creates a "Default Organization"
+       with is_default=True
+
+  2. DEFAULT ADMIN USER:
+     - If users.json does not exist, creates an "admin" account with
+       the super_admin role, default password "admin123" (hashed),
+       and assigned to the default organization
+
+  3. EMPTY DATA FILES:
+     - Creates empty agents.json, scripts.json, alerts.json, and
+       admin_logs.json if they do not exist
+
+  4. SUPER ADMIN ORG ENFORCEMENT:
+     - Ensures all super_admin users are assigned to the default
+       (Global) organization
+
+  5. AGENT ORG ASSIGNMENT:
+     - Assigns unlinked agents to the default organization
+
+  6. SCRIPT ORGANIZATION ASSIGNMENT:
+     - Links scripts without an organization to their agent's organization
+
+  7. SCRIPT STATUS REPAIR:
+     - Invalid statuses -> reset to "pending"
+     - "running" with completed_at metadata -> corrected to "completed"
+     - "failed" with completed_at metadata -> corrected to "completed"
+     - "completed" with failed_at metadata -> failed_at removed
+     - Duplicate script records (same agent + path) -> collapsed
+
+  8. ALERT ORG ASSIGNMENT:
+     - Links alerts without an organization to their agent's organization
+
+================================================================================
+16. REAL-TIME DATA BROADCASTING (WebSockets)
+================================================================================
+
+BatchHost-Pro uses Socket.IO (via Flask-SocketIO with eventlet async mode)
+to push real-time updates to connected browsers:
+
+  Events Broadcast:
+    - "execution_update"  — Detailed execution lifecycle updates
+    - "script_status"     — Script status changes (legacy compatibility)
+    - "agent_status"      — Agent online/offline changes
+
+  Broadcast Mechanism:
+    - emit_socket_event(event, payload) sends to all connected clients
+    - Payloads include: script/execution IDs, status, organization_id,
+      sequence numbers, timestamps, and performance metrics
+    - WebSocket errors are logged but do not block data processing
+
+  Client Connection:
+    - On WebSocket connect, the user joins a room keyed by their user_id
+    - This enables future targeted notifications per user/organization
+
+================================================================================
+17. DATA EXPORT FORMATS
+================================================================================
+
+  PDF Export (via ReportLab):
+    - Formatted reports with tables for log entries
+    - Suitable for printing, sharing, and archiving
+    - Generated on-the-fly from JSON data
+
+  XML Export:
+    - Structured data format using xml.etree.ElementTree
+    - Machine-readable for import into external tools
+    - Generated on-the-fly from JSON data
+
+  Export Filtering Options:
+    - All logs (complete dataset)
+    - Previous X hours (1-24 hours of activity)
+    - Custom date range (specific start and end dates)
+
+================================================================================
+18. SENSITIVE DATA HANDLING
+================================================================================
+
+  Data at Rest:
+    - JSON files are stored in plain text on disk
+    - Passwords are hashed (SHA-256) before storage
+    - Agent tokens are stored in plain text in agents.json
+    - Access to the server file system should be restricted via OS-level
+      permissions
+
+  Data in Transit:
+    - All browser-to-server communication uses HTTPS (SSL/TLS)
+    - Self-signed certificates are auto-generated if none exist
+    - Agent-to-server communication also uses HTTPS
+    - WebSocket connections run over WSS (encrypted WebSocket)
+
+  Data in Logs:
+    - Password fields are explicitly stripped from request logging
+    - IP addresses are logged for audit purposes
+    - Full request payloads (minus passwords) are logged for debugging
+
+  Backup Security:
+    - Passwords are excluded from backup files
+    - Backup files should be stored securely as they contain all other
+      system data including user emails, agent configurations, and
+      organizational structure
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================

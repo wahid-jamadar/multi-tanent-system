@@ -1,0 +1,26 @@
+[
+  {
+    "id": "216d6e21-8a79-42fb-950a-d43bf8ba7787",
+    "hostname": "WAHID",
+    "os_type": "windows",
+    "status": "online",
+    "token": "32966a1f-0707-4f85-9dbd-213659bac8a1",
+    "cpu": 21,
+    "memory": 50,
+    "scripts": [],
+    "last_heartbeat": "2026-04-23T09:30:42.035347",
+    "registered_at": "2026-04-22T22:01:21.342651"
+  },
+  {
+    "id": "40f793c6-317a-44a0-ae2d-bd8b33345903",
+    "hostname": "LAPTOP-2C0GN4OS",
+    "os_type": "windows",
+    "status": "online",
+    "token": "5d3640d4-39cc-4b32-a782-f05acdc5edac",
+    "cpu": 23,
+    "memory": 50,
+    "scripts": [],
+    "last_heartbeat": "2026-04-23T09:30:42.046138",
+    "registered_at": "2026-04-23T09:26:47.249843"
+  }
+]

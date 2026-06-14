@@ -1,0 +1,623 @@
+# Rate Limiting Walkthrough — BatchHost-Pro
+
+## Overview
+
+This walkthrough covers implementing **multi-tier rate limiting** in the BatchHost-Pro Flask server to protect against brute-force login attacks, agent API abuse, and excessive dashboard polling — all without adding external dependencies like Redis.
+
+---
+
+## Threat Model
+
+Before writing code, here's what we're protecting against:
+
+| Threat | Target Endpoint(s) | Impact |
+|---|---|---|
+| Brute-force login | `/api/auth/login` | Account takeover |
+| Credential stuffing | `/api/auth/login` | Mass account compromise |
+| Agent registration spam | `/api/agent/register` | Fake agents, data pollution |
+| Heartbeat flooding | `/api/agent/heartbeat` | Server overload, disk thrashing |
+| API scraping | `/api/agents`, `/api/scripts`, etc. | Data exfiltration, DoS |
+| Page flooding | `/dashboard`, `/agents`, etc. | Resource exhaustion |
+
+---
+
+## Strategy: Tiered Rate Limits
+
+Different endpoints need different limits. A login attempt is far more sensitive than a dashboard page view.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    RATE LIMIT TIERS                      │
+├──────────────┬──────────────┬───────────────┬────────────┤
+│   CRITICAL   │    AGENT     │   STANDARD    │  RELAXED   │
+│  5 req/min   │ 60 req/min   │  30 req/min   │ 120/min    │
+│              │              │               │            │
+│ /api/auth/   │ /api/agent/  │ /api/scripts  │ /dashboard │
+│   login      │  heartbeat   │ /api/agents   │ /agents    │
+│              │  register    │ /api/alerts   │ /scripts   │
+│              │  script-*    │ /api/users    │ /settings  │
+└──────────────┴──────────────┴───────────────┴────────────┘
+```
+
+---
+
+## Phase 1: Create the Rate Limiter Module
+
+> [!TIP]
+> We're building a **zero-dependency** in-memory rate limiter using the sliding-window algorithm. This is appropriate for BatchHost-Pro because it runs as a single-process Waitress/eventlet server — no need for Redis.
+
+### Create [backend/rate_limiter.py](file:///c:/BatchHost-Pro/backend/rate_limiter.py)
+
+```python
+"""
+Rate Limiter for BatchHost-Pro
+Sliding-window in-memory rate limiter with per-IP and per-key tracking.
+"""
+
+import time
+import threading
+import logging
+from collections import defaultdict
+from functools import wraps
+from flask import request, jsonify
+
+logger = logging.getLogger(__name__)
+
+
+class RateLimiter:
+    """Thread-safe sliding-window rate limiter.
+
+    Tracks request timestamps per key (usually IP address) and rejects
+    requests that exceed the configured threshold within the window.
+    """
+
+    def __init__(self):
+        # key -> list of timestamps
+        self._windows = defaultdict(list)
+        self._lock = threading.RLock()
+        # key -> block_until timestamp (for progressive lockout)
+        self._blocked = {}
+        # Cleanup old entries every 5 minutes
+        self._last_cleanup = time.time()
+        self._cleanup_interval = 300  # 5 minutes
+
+    def _cleanup_stale_entries(self, now):
+        """Remove entries older than the longest window we'd ever use (10 min)."""
+        if now - self._last_cleanup < self._cleanup_interval:
+            return
+        self._last_cleanup = now
+        max_age = 600  # 10 minutes
+        stale_keys = []
+        for key, timestamps in self._windows.items():
+            self._windows[key] = [t for t in timestamps if now - t < max_age]
+            if not self._windows[key]:
+                stale_keys.append(key)
+        for key in stale_keys:
+            del self._windows[key]
+
+        # Clean up expired blocks
+        expired_blocks = [k for k, v in self._blocked.items() if now >= v]
+        for k in expired_blocks:
+            del self._blocked[k]
+
+    def is_blocked(self, key):
+        """Check if a key is currently under progressive lockout."""
+        now = time.time()
+        block_until = self._blocked.get(key)
+        if block_until and now < block_until:
+            return True, block_until - now
+        return False, 0
+
+    def block_key(self, key, duration_seconds):
+        """Explicitly block a key for a duration (used for progressive lockout)."""
+        with self._lock:
+            self._blocked[key] = time.time() + duration_seconds
+            logger.warning(
+                "RATE_LIMIT key=%s blocked for %ds",
+                key, duration_seconds,
+            )
+
+    def check(self, key, max_requests, window_seconds):
+        """Check if a request is allowed. Returns (allowed, info_dict).
+
+        Args:
+            key:            Unique identifier (e.g. IP address, agent token).
+            max_requests:   Maximum number of requests in the window.
+            window_seconds: Size of the sliding window in seconds.
+
+        Returns:
+            Tuple of (is_allowed: bool, info: dict) where info contains:
+                - remaining: requests remaining in window
+                - reset_in:  seconds until the window resets
+                - blocked:   whether the key is under lockout
+        """
+        now = time.time()
+        with self._lock:
+            self._cleanup_stale_entries(now)
+
+            # Check explicit block first
+            blocked, block_remaining = self.is_blocked(key)
+            if blocked:
+                return False, {
+                    "remaining": 0,
+                    "reset_in": int(block_remaining),
+                    "blocked": True,
+                }
+
+            # Sliding window: keep only timestamps within window
+            window_start = now - window_seconds
+            self._windows[key] = [
+                t for t in self._windows[key] if t > window_start
+            ]
+            current_count = len(self._windows[key])
+
+            if current_count >= max_requests:
+                # Calculate when the oldest request in window expires
+                oldest = min(self._windows[key]) if self._windows[key] else now
+                reset_in = max(0, int(window_seconds - (now - oldest)))
+                logger.warning(
+                    "RATE_LIMIT exceeded key=%s count=%d/%d window=%ds",
+                    key, current_count, max_requests, window_seconds,
+                )
+                return False, {
+                    "remaining": 0,
+                    "reset_in": reset_in,
+                    "blocked": False,
+                }
+
+            # Allow and record
+            self._windows[key].append(now)
+            remaining = max_requests - current_count - 1
+            return True, {
+                "remaining": remaining,
+                "reset_in": window_seconds,
+                "blocked": False,
+            }
+
+    def get_request_count(self, key, window_seconds):
+        """Get the current request count for a key in a time window."""
+        now = time.time()
+        with self._lock:
+            window_start = now - window_seconds
+            return len([t for t in self._windows[key] if t > window_start])
+
+
+# ─── Global instance ───────────────────────────────────────────────
+rate_limiter = RateLimiter()
+
+
+# ─── Rate limit tiers ──────────────────────────────────────────────
+RATE_TIERS = {
+    "critical":  {"max_requests": 5,   "window_seconds": 60},   # Login, etc.
+    "agent":     {"max_requests": 60,  "window_seconds": 60},   # Agent heartbeats
+    "standard":  {"max_requests": 30,  "window_seconds": 60},   # Normal API
+    "relaxed":   {"max_requests": 120, "window_seconds": 60},   # Page views
+}
+
+
+def _get_client_key():
+    """Extract a meaningful client identifier from the request.
+
+    Uses X-Forwarded-For if behind a reverse proxy, else remote_addr.
+    """
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        # Take the first IP (client IP) from the chain
+        return forwarded.split(",")[0].strip()
+    return request.remote_addr or "unknown"
+
+
+def rate_limit(tier="standard", key_func=None):
+    """Decorator to apply rate limiting to a Flask route.
+
+    Args:
+        tier:     One of 'critical', 'agent', 'standard', 'relaxed'.
+        key_func: Optional callable returning the rate-limit key.
+                  Defaults to client IP address.
+    """
+    config = RATE_TIERS.get(tier, RATE_TIERS["standard"])
+
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            key = (key_func() if key_func else _get_client_key())
+            # Prefix with tier to keep separate buckets
+            full_key = f"{tier}:{key}"
+
+            allowed, info = rate_limiter.check(
+                full_key,
+                config["max_requests"],
+                config["window_seconds"],
+            )
+
+            if not allowed:
+                logger.warning(
+                    "RATE_LIMIT blocked request=%s %s key=%s info=%s",
+                    request.method, request.path, key, info,
+                )
+                response = jsonify({
+                    "error": "Too many requests",
+                    "message": f"Rate limit exceeded. Try again in {info['reset_in']}s.",
+                    "retry_after": info["reset_in"],
+                })
+                response.status_code = 429
+                response.headers["Retry-After"] = str(info["reset_in"])
+                response.headers["X-RateLimit-Remaining"] = "0"
+                return response
+
+            resp = f(*args, **kwargs)
+
+            # Add rate limit headers to successful responses
+            if hasattr(resp, "headers"):
+                resp.headers["X-RateLimit-Remaining"] = str(info["remaining"])
+                resp.headers["X-RateLimit-Limit"] = str(config["max_requests"])
+            return resp
+
+        return wrapped
+    return decorator
+
+
+# ─── Login-specific brute force protection ──────────────────────────
+LOGIN_LOCKOUT_THRESHOLDS = [
+    (5,  60),    # 5 failures  -> locked 1 minute
+    (10, 300),   # 10 failures -> locked 5 minutes
+    (20, 1800),  # 20 failures -> locked 30 minutes
+]
+
+
+def check_login_brute_force(ip_address):
+    """Check if an IP should be locked out due to repeated login failures.
+
+    Returns (is_blocked, lockout_remaining_seconds).
+    """
+    blocked, remaining = rate_limiter.is_blocked(f"login_lockout:{ip_address}")
+    return blocked, remaining
+
+
+def record_login_failure(ip_address):
+    """Record a failed login and apply progressive lockout if needed."""
+    key = f"login_failures:{ip_address}"
+    # Use a 30-minute window for counting failures
+    rate_limiter.check(key, max_requests=999, window_seconds=1800)
+
+    failure_count = rate_limiter.get_request_count(key, 1800)
+
+    for threshold, lockout_duration in reversed(LOGIN_LOCKOUT_THRESHOLDS):
+        if failure_count >= threshold:
+            rate_limiter.block_key(f"login_lockout:{ip_address}", lockout_duration)
+            logger.warning(
+                "RATE_LIMIT login lockout ip=%s failures=%d lockout=%ds",
+                ip_address, failure_count, lockout_duration,
+            )
+            return lockout_duration
+    return 0
+
+
+def record_login_success(ip_address):
+    """Clear login failure tracking after a successful login."""
+    with rate_limiter._lock:
+        rate_limiter._windows.pop(f"login_failures:{ip_address}", None)
+        rate_limiter._blocked.pop(f"login_lockout:{ip_address}", None)
+```
+
+---
+
+## Phase 2: Integrate with server.py
+
+### Step 2.1 — Add the import
+
+At the top of [server.py](file:///c:/BatchHost-Pro/server.py) (around line 34), add:
+
+```diff
+ from backend.tracking import (
+     ACTIVE_STATES,
+     EVENT_TYPES,
+     HEARTBEAT_INTERVAL_SECONDS,
+     TERMINAL_STATES,
+     TIMEOUT_THRESHOLD_SECONDS,
+     ExecutionManager,
+ )
++from backend.rate_limiter import (
++    rate_limit,
++    rate_limiter,
++    check_login_brute_force,
++    record_login_failure,
++    record_login_success,
++)
+```
+
+### Step 2.2 — Protect the Login Endpoint
+
+This is the **highest-priority** change. Modify `api_login()` at [line 1652](file:///c:/BatchHost-Pro/server.py#L1652):
+
+```diff
+ @app.route("/api/auth/login", methods=["POST"])
++@rate_limit(tier="critical")
+ def api_login():
+     data = request.json or {}
+     email = data.get("email", "").strip()
+     password = data.get("password", "")
++
++    # ── Brute force lockout check ──
++    client_ip = request.remote_addr
++    is_locked, lockout_remaining = check_login_brute_force(client_ip)
++    if is_locked:
++        logging.warning(
++            f"Login blocked (lockout) for IP: {client_ip}, "
++            f"remaining: {int(lockout_remaining)}s"
++        )
++        return jsonify({
++            "success": False,
++            "message": f"Too many failed attempts. Try again in {int(lockout_remaining)} seconds.",
++            "retry_after": int(lockout_remaining),
++        }), 429
++
+     users = load_json(USERS_FILE)
+     user = next((u for u in users if u.get("email") == email), None)
+     if not user or user["password"] != hash_pw(password):
+         logging.warning(f"Failed login attempt for email: {email} from {request.remote_addr}")
++        lockout = record_login_failure(client_ip)
++        msg = "Invalid credentials"
++        if lockout:
++            msg += f". Account locked for {lockout} seconds due to repeated failures."
+         return jsonify({"success": False, "message": "Invalid credentials"}), 401
+     # ... rest of login logic ...
++    record_login_success(client_ip)
+     session["user_id"] = user["id"]
+```
+
+### Step 2.3 — Protect Agent Endpoints
+
+Apply the `agent` tier to all agent-facing API routes:
+
+```diff
+ @app.route("/api/agent/register", methods=["POST"])
++@rate_limit(tier="agent")
+ def agent_register():
+
+ @app.route("/api/agent/heartbeat", methods=["POST"])
++@rate_limit(tier="agent")
+ @agent_token_required
+ def agent_heartbeat():
+
+ @app.route("/api/agent/script-event", methods=["POST"])
++@rate_limit(tier="agent")
+ @agent_token_required
+ def agent_script_event():
+
+ @app.route("/api/agent/script-status", methods=["POST"])
++@rate_limit(tier="agent")
+ @agent_token_required
+ def agent_script_status():
+```
+
+> [!IMPORTANT]
+> The `@rate_limit` decorator must be placed **above** `@agent_token_required` so the rate check happens *before* the more expensive token lookup from disk.
+
+### Step 2.4 — Protect Standard API Endpoints
+
+Apply the `standard` tier to data API routes:
+
+```diff
+ @app.route("/api/dashboard/stats")
++@rate_limit(tier="standard")
+ @login_required
+ def api_dashboard_stats():
+
+ @app.route("/api/agents")
++@rate_limit(tier="standard")
+ @login_required
+ def api_agents():
+
+ @app.route("/api/scripts")
++@rate_limit(tier="standard")
+ @login_required
+ def api_scripts():
+
+ @app.route("/api/alerts")
++@rate_limit(tier="standard")
+ @login_required
+ def api_alerts():
+
+ @app.route("/api/users")
++@rate_limit(tier="standard")
+ @admin_required
+ def api_users():
+
+ @app.route("/api/organizations")
++@rate_limit(tier="standard")
+ @login_required
+ def api_organizations():
+
+ @app.route("/api/admin_logs")
++@rate_limit(tier="standard")
+ @admin_required
+ def api_admin_logs():
+
+ @app.route("/api/executions")
++@rate_limit(tier="standard")
+ @login_required
+ def api_executions():
+```
+
+### Step 2.5 — Protect Write/Mutation Endpoints (Stricter)
+
+For endpoints that modify data, use the `critical` tier to prevent automated abuse:
+
+```diff
+ @app.route("/api/users", methods=["POST"])
++@rate_limit(tier="critical")
+ @admin_required
+ def api_create_user():
+
+ @app.route("/api/organizations", methods=["POST"])
++@rate_limit(tier="critical")
+ @admin_required
+ def api_create_organization():
+
+ @app.route("/api/scripts", methods=["POST"])
++@rate_limit(tier="critical")
+ @login_required
+ def api_create_script():
+
+ @app.route("/api/backups/trigger", methods=["POST"])
++@rate_limit(tier="critical")
+ @admin_required
+ def api_trigger_backup():
+```
+
+### Step 2.6 — Protect Page Routes (Relaxed)
+
+For HTML page routes, use the `relaxed` tier — these are less sensitive but we still want basic protection:
+
+```diff
+ @app.route("/dashboard")
++@rate_limit(tier="relaxed")
+ @login_required
+ def dashboard_page():
+
+ @app.route("/agents")
++@rate_limit(tier="relaxed")
+ @login_required
+ def agents_page():
+
+ @app.route("/scripts")
++@rate_limit(tier="relaxed")
+ @login_required
+ def scripts_page():
+```
+
+> [!NOTE]
+> You do **not** need to add rate limiting to `/images/<path>` or static file routes — these are lightweight and not security-sensitive.
+
+---
+
+## Phase 3: Add Rate Limit Status to Admin Logs
+
+Optionally, log rate limit blocks as admin-visible events. Add this to [server.py](file:///c:/BatchHost-Pro/server.py) inside `log_request_info()` at [line 94](file:///c:/BatchHost-Pro/server.py#L94):
+
+```diff
+ @app.before_request
+ def log_request_info():
+     g.start_time = time.time()
+     if request.path.startswith('/images') or request.path.startswith('/static'):
+         return
+     logging.info(f"Incoming request: {request.method} {request.path} from {request.remote_addr}")
+     if request.is_json and request.json:
+         safe_data = {k: v for k, v in request.json.items() if 'password' not in k.lower()}
+         logging.info(f"Request payload: {json.dumps(safe_data)}")
+```
+
+The rate limit decorator already logs blocks via `logging.warning()`, so they will appear in [server.log](file:///c:/BatchHost-Pro/logs/server.log). No additional changes are required.
+
+---
+
+## Phase 4: Update requirements.txt
+
+Since this implementation is **zero-dependency**, no changes to [requirements.txt](file:///c:/BatchHost-Pro/requirements.txt) are needed.
+
+> [!TIP]
+> If you prefer a battle-tested library instead, you could use **Flask-Limiter** with its in-memory backend:
+> ```
+> pip install Flask-Limiter
+> ```
+> However, the custom implementation above gives you full control over lockout logic, tier definitions, and agent-specific behavior — which Flask-Limiter doesn't handle as cleanly.
+
+---
+
+## Summary of Changes
+
+| File | Change |
+|---|---|
+| `backend/rate_limiter.py` | **New file** — sliding-window rate limiter with progressive login lockout |
+| `server.py` (imports) | Add import for rate limiter functions |
+| `server.py` (login) | Add `@rate_limit("critical")` + brute-force lockout logic |
+| `server.py` (agent APIs) | Add `@rate_limit("agent")` to 4 endpoints |
+| `server.py` (data APIs) | Add `@rate_limit("standard")` to ~8 endpoints |
+| `server.py` (mutations) | Add `@rate_limit("critical")` to 4 write endpoints |
+| `server.py` (pages) | Add `@rate_limit("relaxed")` to page routes |
+
+---
+
+## Testing Plan
+
+### Manual Testing
+
+1. **Login brute force**: Send 6 rapid login requests with wrong passwords → verify 429 on the 6th
+2. **Login lockout message**: After lockout, send a valid login → verify it's still blocked with a timer
+3. **Agent heartbeat flood**: Send 61 heartbeats in 1 minute → verify 429
+4. **Normal usage**: Navigate the dashboard normally → verify no 429s
+5. **Headers**: Check that `X-RateLimit-Remaining` and `Retry-After` headers are present
+
+### Quick Test Script
+
+Save as `scratch/test_rate_limit.py`:
+
+```python
+import requests
+import time
+
+BASE = "https://172.100.31.40:5000"
+
+# Test 1: Login brute force
+print("=== Testing Login Rate Limit ===")
+for i in range(8):
+    r = requests.post(
+        f"{BASE}/api/auth/login",
+        json={"email": "fake@test.com", "password": "wrong"},
+        verify=False,
+    )
+    print(f"  Attempt {i+1}: {r.status_code} - {r.json().get('message', '')}")
+    if r.status_code == 429:
+        print(f"  -> Rate limited! Retry-After: {r.headers.get('Retry-After')}s")
+        break
+
+# Test 2: API rate limit
+print("\n=== Testing API Rate Limit ===")
+# (Requires a valid session cookie — adjust accordingly)
+```
+
+---
+
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    A[Incoming Request] --> B{Static/Image?}
+    B -->|Yes| C[Serve directly]
+    B -->|No| D{Rate Limit Check}
+    D -->|Blocked| E["429 Too Many Requests<br/>(+ Retry-After header)"]
+    D -->|Allowed| F{Auth Required?}
+    F -->|Login endpoint| G{Brute Force Check}
+    G -->|Locked out| H["429 Locked Out<br/>(progressive timer)"]
+    G -->|OK| I[Process Login]
+    I -->|Failed| J[Record Failure<br/>Check Lockout Threshold]
+    I -->|Success| K[Clear Failure History]
+    F -->|Agent endpoint| L[Token Validation]
+    L --> M[Process Agent Request]
+    F -->|Web API| N[Session Validation]
+    N --> O[Process API Request]
+
+    style E fill:#ff6b6b,color:#fff
+    style H fill:#ff6b6b,color:#fff
+    style K fill:#51cf66,color:#fff
+```
+
+---
+
+## Rollout Recommendation
+
+> [!WARNING]
+> Don't deploy all tiers at once. Roll out in phases and monitor [server.log](file:///c:/BatchHost-Pro/logs/server.log) for false positives.
+
+1. **Week 1**: Deploy `critical` tier on `/api/auth/login` only + brute-force lockout
+2. **Week 2**: Add `agent` tier to agent endpoints — monitor for heartbeat 429s
+3. **Week 3**: Add `standard` tier to data APIs
+4. **Week 4**: Add `relaxed` tier to page routes
+
+Monitor `RATE_LIMIT` log entries after each phase. If legitimate users/agents are hitting limits, tune the `RATE_TIERS` values up.
+
+---
+
+> [!IMPORTANT]
+> **Decision needed**: Should I proceed with implementing the code changes (creating `rate_limiter.py` and modifying `server.py`), or would you like to adjust the tier limits or strategy first?

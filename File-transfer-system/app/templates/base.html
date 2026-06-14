@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}FileBridge{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container-fluid ps-0">
+      <a class="navbar-brand d-flex align-items-center p-0" href="{{ url_for('dashboard') }}">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="FileBridge Logo" class="navbar-logo m-0" style="margin-right: -30px !important;"><span class="brand-text">FileBridge</span>
+      </a>
+      
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav mx-auto gap-1">
+          <!-- Overview -->
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('dashboard') %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a>
+          </li>
+          
+          <!-- Infrastructure -->
+          {% if user_has_role(user, 'Super Admin', 'Organization Admin') %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Infrastructure</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('servers_page') }}">Servers</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('agents_page') }}">Agents</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('file_manager_page') }}">File Explorer</a></li>
+            </ul>
+          </li>
+          {% endif %}
+
+          <!-- Operations -->
+          {% if user_has_role(user, 'Super Admin', 'Organization Admin') %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Operations</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('transfer_page') }}">File Transfer</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('synchronization_page') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-repeat me-2" viewBox="0 0 16 16">
+                  <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-1.158 6.308c-.155.057-.32.081-.488.082H7.333a.994.994 0 0 1-.59-.204L3.644 10.8a.994.994 0 0 1-.33-.674l-.157-2.113a.25.25 0 0 1 .498-.037l.157 2.113c.012.155.08.3.192.41l3.099 2.384c.057.043.125.066.195.066h2.555c.105 0 .208-.022.304-.065l2.457-1.106a.25.25 0 1 1 .206.455l-2.457 1.106zM6.772 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L7.182 4.658a.25.25 0 0 1-.41-.192zM4.466 9h-3.932a.25.25 0 0 1-.192-.41l1.966-2.36a.25.25 0 0 1 .384 0l1.966 2.36a.25.25 0 0 1-.192.41zm1.158-6.308c.155-.057.32-.081.488-.082H8.667c.217 0 .428.07.6.204L12.356 5.2c.112.086.18.22.192.362l.157 2.113a.25.25 0 0 1-.498.037l-.157-2.113a.25.25 0 0 0-.192-.41l-3.099-2.384A.25.25 0 0 0 8.667 3H6.112a.25.25 0 0 0-.24.167L3.415 4.273a.25.25 0 0 1-.206-.455l2.457-1.106c.155-.057.32-.081.488-.082z"/>
+                </svg>
+                Synchronization
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('alerts_page') }}">Alerts</a></li>
+            </ul>
+          </li>
+          {% endif %}
+
+          <!-- Administration -->
+          {% if user_has_role(user, 'Super Admin') %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle {% if request.path in [url_for('users_page'), url_for('organizations_page'), url_for('settings_page')] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">Administration</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('users_page') }}">Users</a></li>
+              {% if not user.organization_id or user_has_role(user, 'Super Admin') %}
+              <li><a class="dropdown-item" href="{{ url_for('organizations_page') }}">Organizations</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('settings_page') }}">Settings</a></li>
+              {% endif %}
+            </ul>
+          </li>
+          {% if not user.organization_id or user_has_role(user, 'Super Admin') %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle {% if request.path in [url_for('system_logs_page'), url_for('admin_logs_page')] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">Logs</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('system_logs_page') }}">System Log</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('admin_logs_page') }}">Super Admin Log</a></li>
+            </ul>
+          </li>
+          {% else %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('logs_page') %}active{% endif %}" href="{{ url_for('logs_page') }}">Logs</a>
+          </li>
+          {% endif %}
+          {% elif user %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('logs_page') %}active{% endif %}" href="{{ url_for('logs_page') }}">Logs</a>
+          </li>
+          {% endif %}
+        </ul>
+
+        <div class="d-flex align-items-center gap-3">
+          {% if user and user_has_role(user, 'Super Admin') %}
+          <form class="d-flex align-items-center m-0 p-0" method="GET" action="">
+            <select class="form-select form-select-sm bg-dark border-secondary text-white fw-medium shadow-sm" name="org_id" onchange="this.form.submit()" style="width: 175px;">
+              <option value="all" {% if not session.get('org_filter') %}selected{% endif %}>All Organizations</option>
+              {% for org in get_all_organizations() %}
+              <option value="{{ org.id }}" {% if session.get('org_filter') == org.id %}selected{% endif %}>{{ org.name }}</option>
+              {% endfor %}
+            </select>
+          </form>
+          {% endif %}
+          
+          <button class="btn btn-sm btn-dark d-flex align-items-center gap-2" id="globalRefreshBtn" title="Refresh Page">
+            <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-clockwise flex-shrink-0" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+              <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+            </svg>
+            <span id="refreshText" class="d-none d-md-inline-block text-start" style="width: 60px;">Refresh</span>
+          </button>
+
+          <div class="dropdown">
+            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none dropdown-toggle px-2 py-1 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s;" data-bs-toggle="dropdown" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+              <div class="position-relative">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 32px; height: 32px; font-size: 13px; background: linear-gradient(135deg, var(--fb-primary), var(--fb-indigo));">
+                  {{ user.username[:1].upper() if user else "U" }}
+                </div>
+                <span class="position-absolute bottom-0 end-0 rounded-circle border border-dark" style="width: 10px; height: 10px; background-color: var(--fb-success); margin-bottom: -2px; margin-right: -2px;"></span>
+              </div>
+              <div class="d-none d-md-flex flex-column lh-1 pe-1">
+                <span class="text-white fw-semibold small" style="font-size: 13px;">{{ user.username if user else "Admin" }}</span>
+                <span class="text-secondary" style="font-size: 11px;">{{ user.roles[0].name if user and user.roles else "Viewer only" }}</span>
+              </div>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end mt-2">
+              <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('settings_page') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664z"/></svg>
+                Profile Settings
+              </a></li>
+              <li><button class="dropdown-item d-flex align-items-center gap-2" id="themeToggle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/></svg>
+                Toggle Theme
+              </button></li>
+              <li><hr class="dropdown-divider border-secondary opacity-25"></li>
+              <li><a class="dropdown-item text-danger d-flex align-items-center gap-2" href="{{ url_for('logout') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+                Sign Out
+              </a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-fluid py-4 px-md-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category if category != 'danger' else 'danger status-failed' }} alert-dismissible fade show glass-panel mb-4 d-flex align-items-center gap-3" role="alert">
+          {% if category == 'success' %}
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="var(--fb-success)" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+          {% elif category == 'danger' %}
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="var(--fb-danger)" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/></svg>
+          {% else %}
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+          {% endif %}
+          <div class="flex-grow-1 fw-medium">{{ message }}</div>
+          <button type="button" class="btn-close btn-close-white opacity-50" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endwith %}
+    
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Session Modal -->
+  <div class="modal fade" id="sessionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass-panel border-secondary shadow-lg">
+        <div class="modal-header border-secondary border-opacity-25">
+          <h5 class="modal-title fw-bold">Session Expiring</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-secondary">Your secure session will expire soon due to inactivity.</div>
+        <div class="modal-footer border-secondary border-opacity-25">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Stay Signed In</button>
+          <a class="btn btn-dark" href="{{ url_for('logout') }}">Sign Out</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    window.FileBridgeConfig = {
+      sessionWarningMs: 25 * 60 * 1000,
+      sessionTimeoutMs: 30 * 60 * 1000,
+      userRoles: {{ (user.roles | map(attribute='name') | list) | tojson if user else [] }}
+    };
+  </script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+  <!-- Floating Navigation Widget -->
+  <div id="quick-nav-widget" class="quick-nav-container">
+    <!-- Expanded Menu -->
+    <div id="quick-nav-menu" class="quick-nav-menu-panel">
+      <div class="quick-nav-menu-header">
+        <svg viewBox="0 0 24 24" class="quick-nav-header-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span>System Navigation</span>
+      </div>
+      <div class="quick-nav-menu-divider"></div>
+      <div class="quick-nav-menu-body">
+        <a id="quick-nav-primary-btn" href="#" class="quick-nav-btn quick-nav-btn-primary">
+          <span>Go to Other System</span>
+          <svg viewBox="0 0 24 24" class="quick-nav-btn-icon" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+        <a id="quick-nav-secondary-btn" href="#" class="quick-nav-btn quick-nav-btn-secondary">
+          <span>Go to Select Page (<code>/select</code>)</span>
+          <svg viewBox="0 0 24 24" class="quick-nav-btn-icon" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+    </div>
+    
+    <!-- Bubble Toggle Button -->
+    <button id="quick-nav-toggle" class="quick-nav-bubble-btn" aria-label="Toggle navigation menu">
+      <svg viewBox="0 0 24 24" class="quick-nav-bubble-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+      </svg>
+    </button>
+  </div>
+
+  <style>
+    /* Premium Floating Navigation Widget CSS */
+    .quick-nav-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 2147483647;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      pointer-events: none;
+    }
+
+    .quick-nav-bubble-btn,
+    .quick-nav-menu-panel {
+      pointer-events: auto;
+    }
+
+    .quick-nav-bubble-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: var(--widget-gradient, linear-gradient(135deg, #3B82F6, #8B5CF6));
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+      outline: none;
+    }
+
+    .quick-nav-bubble-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 12px 35px var(--widget-glow, rgba(99, 102, 241, 0.4)), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .quick-nav-bubble-btn:active {
+      transform: scale(0.95);
+    }
+
+    .quick-nav-bubble-icon {
+      width: 26px;
+      height: 26px;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .quick-nav-container.active .quick-nav-bubble-icon {
+      transform: rotate(135deg);
+    }
+
+    .quick-nav-container.active .quick-nav-bubble-btn {
+      background: #EF4444;
+      box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+    }
+
+    .quick-nav-menu-panel {
+      width: 290px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.85);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+      margin-bottom: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transform-origin: bottom right;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(12px) scale(0.95);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .quick-nav-container.active .quick-nav-menu-panel {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .quick-nav-menu-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .quick-nav-header-icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    .quick-nav-menu-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 0 -16px;
+    }
+
+    .quick-nav-menu-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quick-nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .quick-nav-btn-primary {
+      background: var(--widget-btn-gradient, linear-gradient(135deg, #10B981, #06B6D4));
+      color: #ffffff;
+      box-shadow: 0 4px 15px var(--widget-btn-shadow, rgba(16, 185, 129, 0.2));
+    }
+
+    .quick-nav-btn-primary:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px var(--widget-btn-shadow, rgba(16, 185, 129, 0.3));
+    }
+
+    .quick-nav-btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: #E5E7EB;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .quick-nav-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .quick-nav-btn:active {
+      transform: scale(0.98);
+    }
+
+    .quick-nav-btn-icon {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.2s ease;
+    }
+
+    .quick-nav-btn:hover .quick-nav-btn-icon {
+      transform: translateX(3px);
+    }
+
+    @media (max-width: 600px) {
+      .quick-nav-container {
+        bottom: 16px;
+        right: 16px;
+      }
+      .quick-nav-menu-panel {
+        width: calc(100vw - 32px);
+        max-width: 280px;
+      }
+    }
+  </style>
+
+  <script>
+    (function() {
+      const scheme = window.location.protocol;
+      const hostname = window.location.hostname;
+      
+      const selectUrl = scheme + "//" + hostname + ":8000/select";
+      const batchhostUrl = scheme + "//" + hostname + ":5000/";
+      const filebridgeUrl = scheme + "//" + hostname + ":5001/";
+      
+      const currentPort = window.location.port;
+      const isBatchHost = (currentPort === "5000");
+      const isFileBridge = (currentPort === "5001");
+      
+      if (!isBatchHost && !isFileBridge) return;
+      
+      const container = document.getElementById("quick-nav-widget");
+      const toggleBtn = document.getElementById("quick-nav-toggle");
+      const primaryBtn = document.getElementById("quick-nav-primary-btn");
+      const secondaryBtn = document.getElementById("quick-nav-secondary-btn");
+      
+      if (isBatchHost) {
+        container.style.setProperty("--widget-gradient", "linear-gradient(135deg, #3B82F6, #8B5CF6)");
+        container.style.setProperty("--widget-glow", "rgba(139, 92, 246, 0.4)");
+        container.style.setProperty("--widget-btn-gradient", "linear-gradient(135deg, #10B981, #06B6D4)");
+        container.style.setProperty("--widget-btn-shadow", "rgba(16, 185, 129, 0.2)");
+        
+        primaryBtn.href = filebridgeUrl;
+        primaryBtn.querySelector("span").textContent = "Go to FileBridge System";
+      } else if (isFileBridge) {
+        container.style.setProperty("--widget-gradient", "linear-gradient(135deg, #10B981, #06B6D4)");
+        container.style.setProperty("--widget-glow", "rgba(6, 182, 212, 0.4)");
+        container.style.setProperty("--widget-btn-gradient", "linear-gradient(135deg, #3B82F6, #8B5CF6)");
+        container.style.setProperty("--widget-btn-shadow", "rgba(59, 130, 246, 0.2)");
+        
+        primaryBtn.href = batchhostUrl;
+        primaryBtn.querySelector("span").textContent = "Go to BatchHost-Pro System";
+      }
+      
+      secondaryBtn.href = selectUrl;
+      
+      toggleBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        container.classList.toggle("active");
+      });
+      
+      document.addEventListener("click", function(e) {
+        if (container.classList.contains("active") && !container.contains(e.target)) {
+          container.classList.remove("active");
+        }
+      });
+      
+      document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape" && container.classList.contains("active")) {
+          container.classList.remove("active");
+        }
+      });
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

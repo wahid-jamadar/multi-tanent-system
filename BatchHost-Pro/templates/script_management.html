@@ -1,0 +1,635 @@
+{% extends "base.html" %}
+{% set active_page = "script-management" %}
+{% block title %}Script Management{% endblock %}
+{% block page_title %}Script Management{% endblock %}
+
+{% block extra_head %}
+<style>
+  .script-management-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    max-width: 100%;
+  }
+
+  .script-management-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    width: 100%;
+  }
+
+  .script-agent-filter,
+  .script-add-btn {
+    flex: 0 0 auto;
+    height: 38px;
+    border-radius: 8px;
+    font-size: 11.7px;
+  }
+
+  .script-agent-filter {
+    width: 200px;
+  }
+
+  .script-add-btn {
+    white-space: nowrap;
+    width: 128px;
+    justify-content: center;
+    padding: 0 14px;
+    font-weight: 800;
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .script-add-btn:hover {
+    background: var(--accent2);
+  }
+
+  @media (max-width: 760px) {
+    .script-management-header {
+      grid-template-columns: 1fr;
+    }
+
+    .script-management-actions {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .script-agent-filter,
+    .script-add-btn {
+      width: 100%;
+    }
+  }
+
+  /* Toggle Switch */
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .toggle-switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--bg3, #1A2332);
+    border: 1px solid var(--border, #1F2A3A);
+    transition: .3s;
+    border-radius: 20px;
+  }
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--text2, #9CA3AF);
+    transition: .3s;
+    border-radius: 50%;
+  }
+  input:checked + .toggle-slider {
+    background-color: var(--accent, #3B82F6);
+    border-color: var(--accent, #3B82F6);
+  }
+  input:checked + .toggle-slider:before {
+    background-color: #fff;
+    transform: translateX(14px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="script-management-header">
+  <div>
+    <div class="page-heading">Script Management</div>
+    <div class="page-subtitle">Add, monitor and control batch scripts</div>
+  </div>
+  <div class="script-management-actions">
+    <select id="orgFilter" class="script-agent-filter" onchange="loadScripts()">
+      <option value="">All Organizations</option>
+    </select>
+    <select id="agentFilter" class="script-agent-filter" onchange="loadScripts()">
+      <option value="">All Agents</option>
+    </select>
+    <button class="btn btn-primary script-add-btn" onclick="openAddModal()">+ Add Script</button>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <input type="search" id="searchInput" placeholder="Search by name or path……" style="max-width:280px;" oninput="renderScripts()">
+    <div class="filter-tabs" id="scriptFilter">
+      <div class="filter-tab active" onclick="setFilter('all',this)">All</div>
+      <div class="filter-tab" onclick="setFilter('bat',this)">BAT</div>
+      <div class="filter-tab" onclick="setFilter('sh',this)">SH</div>
+      <div class="filter-tab" onclick="setFilter('scheduled',this)">Scheduled</div>
+      <div class="filter-tab" onclick="setFilter('unscheduled',this)">Unscheduled</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Name / Path</th><th>Organization</th><th>Agent</th><th>Type</th><th>Status</th><th>Scheduler</th><th>Operations</th><th>Delete</th></tr>
+      </thead>
+      <tbody id="scriptsTable">
+        <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Script Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-title">Add Script</div>
+    <div class="form-row">
+      <label>Script Name</label>
+      <input type="text" id="addName" placeholder="e.g., Daily Backup, Deploy Script">
+    </div>
+    <div class="form-row">
+      <label>Script Path</label>
+      <input type="text" id="addPath" placeholder="C:\scripts\backup.bat or /opt/scripts/deploy.sh">
+    </div>
+    <div class="form-row">
+      <label>Agent</label>
+      <select id="addAgent"></select>
+    </div>
+
+    <div class="form-row" style="margin-top:10px;">
+      <label style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;">
+        <span class="toggle-switch">
+          <input type="checkbox" id="addAutoStartCrash" style="width:auto;">
+          <span class="toggle-slider"></span>
+        </span>
+        <span style="font-weight:600;">Auto Start Script If Crashed</span>
+      </label>
+    </div>
+
+    <div class="form-row" style="margin-top:10px;">
+      <label style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;">
+        <span class="toggle-switch">
+          <input type="checkbox" id="addSchedulerToggle" onchange="toggleSchedulerField()" style="width:auto;">
+          <span class="toggle-slider"></span>
+        </span>
+        <span style="font-weight:600;">Add Auto Scheduler</span>
+      </label>
+    </div>
+
+    <div id="schedulerField" style="display:none;border:1px solid #ddd;padding:12px;border-radius:8px;margin-top:10px;">
+
+      <div class="form-row">
+        <label>Run Period (minutes or hours)</label>
+        <div style="display:flex;gap:10px;">
+          <input type="number" id="addScheduleValue" min="1" placeholder="e.g., 30" style="flex:1;">
+          <select id="addScheduleUnit" style="width:100px;">
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>From Date</label>
+        <input type="datetime-local" id="addScheduleFromDate">
+      </div>
+
+      <div class="form-row">
+        <label>To Date</label>
+        <input type="datetime-local" id="addScheduleToDate">
+      </div>
+
+      <div class="form-row">
+        <label>Next Run Preview</label>
+        <input type="text" id="addNextRun" readonly>
+      </div>
+
+  </div>
+
+    <div style="font-size:12px;color:var(--text2);background:rgba(0,100,200,0.1);padding:8px;border-radius:4px;margin:8px 0;">
+      Status get's auto-detected from agent's heartbeat
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addScript()">Add Script</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Script Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">Edit Script</div>
+    <input type="hidden" id="editScriptId">
+    <div class="form-row">
+      <label>Script Name</label>
+      <input type="text" id="editName" placeholder="e.g., Daily Backup, Deploy Script">
+    </div>
+    <div class="form-row">
+      <label>Script Path</label>
+      <input type="text" id="editPath" placeholder="C:\scripts\backup.bat or /opt/scripts/deploy.sh">
+    </div>
+    <div class="form-row">
+      <label>Agent</label>
+      <select id="editAgent"></select>
+    </div>
+    
+    <div class="form-row" style="margin-top:10px;">
+      <label style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;">
+        <span class="toggle-switch">
+          <input type="checkbox" id="editAutoStartCrash" style="width:auto;">
+          <span class="toggle-slider"></span>
+        </span>
+        <span style="font-weight:600;">Auto Start Script If Crashed</span>
+      </label>
+    </div>
+    
+    <div class="form-row" style="margin-top:10px;">
+      <label style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;">
+        <span class="toggle-switch">
+          <input type="checkbox" id="editSchedulerToggle" onchange="toggleEditSchedulerField()" style="width:auto;">
+          <span class="toggle-slider"></span>
+        </span>
+        <span style="font-weight:600;" id="editSchedulerLabel">Add Scheduler</span>
+      </label>
+    </div>
+    <div id="editSchedulerField" style="display:none;margin-top:10px;border:1px solid #ddd;padding:12px;border-radius:8px;">
+      <div class="form-row">
+        <label>Run Period (minutes or hours)</label>
+        <div style="display:flex;gap:10px;">
+          <input type="number" id="editScheduleValue" min="1" placeholder="e.g., 30" style="flex:1;">
+          <select id="editScheduleUnit" style="width:100px;">
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:10px;">
+        <label>From Date</label>
+        <input type="datetime-local" id="editScheduleFromDate">
+      </div>
+      <div class="form-row" style="margin-top:10px;">
+        <label>To Date</label>
+        <input type="datetime-local" id="editScheduleToDate">
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditScript()">Save Changes</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allScripts = [];
+let allAgents = [];
+let allOrganizations = [];
+let currentFilter = 'all';
+
+async function init() {
+  const [sr, ar, or] = await Promise.all([fetch('/api/scripts'), fetch('/api/agents'), fetch('/api/organizations')]);
+  allScripts = await sr.json();
+  allAgents = await ar.json();
+  allOrganizations = await or.json();
+  populateOrgFilter();
+  populateAgentFilter();
+  renderScripts();
+}
+
+function populateOrgFilter() {
+  const sel = document.getElementById('orgFilter');
+  const opts = allOrganizations.map(o => `<option value="${o.id}">${escapeHtml(o.name)}</option>`).join('');
+  sel.innerHTML = '<option value="">All Organizations</option>' + opts;
+}
+
+function populateAgentFilter() {
+  const orgF = document.getElementById('orgFilter').value;
+  const filteredAgents = orgF ? allAgents.filter(a => a.organization_id === orgF) : allAgents;
+  
+  const sel = document.getElementById('agentFilter');
+  const addSel = document.getElementById('addAgent');
+  const opts = filteredAgents.map(a => `<option value="${a.id}">${escapeHtml(a.hostname || a.id)}</option>`).join('');
+  
+  const currentSel = sel.value;
+  sel.innerHTML = '<option value="">All Agents</option>' + opts;
+  if (filteredAgents.some(a => a.id === currentSel)) sel.value = currentSel;
+  else sel.value = "";
+  
+  addSel.innerHTML = '<option value="">— Select Agent —</option>' + opts;
+}
+
+async function loadScripts() {
+  try { 
+    const r = await fetch('/api/scripts'); 
+    allScripts = await r.json(); 
+    populateAgentFilter();
+    renderScripts(); 
+  } catch(e) {}
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('#scriptFilter .filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderScripts();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+function renderScripts() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const orgF = document.getElementById('orgFilter').value;
+  const agentF = document.getElementById('agentFilter').value;
+  let list = allScripts;
+  if (orgF) list = list.filter(s => s.organization_id === orgF);
+  if (agentF) list = list.filter(s => s.agent_id === agentF);
+  if (currentFilter === 'bat') list = list.filter(s => s.type === 'bat');
+  else if (currentFilter === 'sh') list = list.filter(s => s.type === 'sh');
+  else if (currentFilter === 'scheduled') list = list.filter(s => !!s.schedule);
+  else if (currentFilter === 'unscheduled') list = list.filter(s => !s.schedule);
+  if (q) list = list.filter(s => s.name.toLowerCase().includes(q) || (s.path||'').toLowerCase().includes(q));
+
+  const tbody = document.getElementById('scriptsTable');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">S</div><p>No scripts found</p></div></td></tr>`;
+    return;
+  }
+  const statusMap = {running:'yellow',completed:'green',failed:'red',pending:'gray'};
+  tbody.innerHTML = list.map(s => {
+    const safeName = escapeHtml(s.name);
+    const safePath = escapeHtml(s.path);
+    const orgNameFull = s.organization_name || '—';
+    const orgNameShort = orgNameFull.split(' ').slice(0, 2).join(' ');
+    const safeOrg = escapeHtml(orgNameShort);
+    const safeAgent = escapeHtml(s.agent_hostname || s.agent_id);
+    let scheduleHtml = '';
+    if (s.schedule) {
+      if (s.schedule.value !== undefined && s.schedule.unit !== undefined) {
+        scheduleHtml = `<span class="badge blue" style="font-size:10px; margin-left:5px;">every ${s.schedule.value} ${s.schedule.unit}</span>`;
+      } else {
+        scheduleHtml = `<span class="badge blue" style="font-size:10px; margin-left:5px;">Scheduled</span>`;
+      }
+    }
+    return `
+    <tr>
+      <td>
+        <div class="td-name">${safeName} ${scheduleHtml}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;max-width:250px;white-space:nowrap;overflow:hidden;mask-image:linear-gradient(to right, black 80%, transparent 100%);-webkit-mask-image:linear-gradient(to right, black 80%, transparent 100%);" title="${safePath}">${safePath}</div>
+      </td>
+      <td><span class="badge" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border)">${safeOrg}</span></td>
+      <td><span class="badge blue">${safeAgent || '—'}</span></td>
+      <td><span class="badge ${s.type==='bat'?'blue':'green'}">${(s.type||'?').toUpperCase()}</span></td>
+      <td><span class="badge ${statusMap[s.status]||'gray'}">${s.status||'?'}</span></td>
+      <td>
+        ${s.schedule
+          ? `<span class="badge green" style="font-size:11px;display:inline-flex;align-items:center;gap:4px;" title="Time-based schedule active">
+               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+               On
+             </span>`
+          : s.auto_start_crashed
+          ? `<span class="badge" style="font-size:11px;display:inline-flex;align-items:center;gap:4px;background:rgba(139,92,246,0.18);color:#a78bfa;border:1px solid rgba(139,92,246,0.35);" title="Auto-restart on crash is enabled">
+               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+               Auto
+             </span>`
+          : `<span class="badge gray" style="font-size:11px;display:inline-flex;align-items:center;gap:4px;" title="No schedule or auto-restart configured">
+               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+               Off
+             </span>`
+        }
+      </td>
+      <td>
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="runScript('${s.id}')" title="Run Now">Run</button>
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="stopScript('${s.id}')" title="Stop Script" style="background-color: var(--danger, #EF4444); color: white;">Stop</button>
+        <button class="btn btn-primary btn-sm btn-icon" onclick="openEditModal('${s.id}')" title="Edit">Edit</button>
+      </td>
+      <td>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteScript('${s.id}')" title="Delete">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+
+
+async function runScript(id) {
+  const r = await fetch(`/api/scripts/${id}/run`, {method:'POST'});
+  const d = await r.json();
+  if (d.success) {
+    flash('Run command sent to agent!', 'success');
+    loadScripts();
+  } else {
+    flash(d.error || 'Error', 'error');
+  }
+}
+
+async function stopScript(id) {
+  if (!confirm('Are you sure you want to stop this script?')) return;
+  const r = await fetch(`/api/scripts/${id}/stop`, {method:'POST'});
+  const d = await r.json();
+  if (d.success) {
+    flash('Stop command sent to agent!', 'success');
+    loadScripts();
+  } else {
+    flash(d.error || 'Error', 'error');
+  }
+}
+
+async function deleteScript(id) {
+  if (!confirm('Delete this script?')) return;
+  await fetch(`/api/scripts/${id}`, {method:'DELETE'});
+  flash('Script removed', 'success');
+  loadScripts();
+}
+
+function openAddModal() { document.getElementById('addModal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.getElementById('addModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal('addModal'); });
+document.getElementById('editModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal('editModal'); });
+
+function openEditModal(id) {
+  const script = allScripts.find(s => s.id === id);
+  if (!script) return;
+  document.getElementById('editScriptId').value = id;
+  document.getElementById('editName').value = script.name || '';
+  document.getElementById('editPath').value = script.path || '';
+  
+  const editSel = document.getElementById('editAgent');
+  const opts = allAgents.map(a => `<option value="${a.id}">${escapeHtml(a.hostname || a.id)}</option>`).join('');
+  editSel.innerHTML = '<option value="">— Select Agent —</option>' + opts;
+  editSel.value = script.agent_id || '';
+
+  if (document.getElementById('editAutoStartCrash')) {
+    document.getElementById('editAutoStartCrash').checked = script.auto_start_crashed || false;
+  }
+
+  const labelElement = document.getElementById('editSchedulerLabel');
+  if (script.schedule) {
+    document.getElementById('editSchedulerToggle').checked = true;
+    labelElement.innerText = 'Edit Scheduler';
+    document.getElementById('editSchedulerField').style.display = 'block';
+    document.getElementById('editScheduleValue').value = script.schedule.value || '';
+    document.getElementById('editScheduleUnit').value = script.schedule.unit || 'minutes';
+    document.getElementById('editScheduleFromDate').value = script.schedule.from_date || '';
+    document.getElementById('editScheduleToDate').value = script.schedule.to_date || '';
+  } else {
+    document.getElementById('editSchedulerToggle').checked = false;
+    labelElement.innerText = 'Add Scheduler';
+    document.getElementById('editSchedulerField').style.display = 'none';
+    document.getElementById('editScheduleValue').value = '';
+    document.getElementById('editScheduleUnit').value = 'minutes';
+    document.getElementById('editScheduleFromDate').value = '';
+    document.getElementById('editScheduleToDate').value = '';
+  }
+  
+  document.getElementById('editModal').classList.add('open');
+}
+
+function toggleEditSchedulerField() {
+  const isChecked = document.getElementById('editSchedulerToggle').checked;
+  document.getElementById('editSchedulerField').style.display = isChecked ? 'block' : 'none';
+}
+
+async function saveEditScript() {
+  const id = document.getElementById('editScriptId').value;
+  const name = document.getElementById('editName').value.trim();
+  const path = document.getElementById('editPath').value.trim();
+  const agentId = document.getElementById('editAgent').value;
+  const schedulerEnabled = document.getElementById('editSchedulerToggle').checked;
+  const scheduleValue = document.getElementById('editScheduleValue').value.trim();
+  const scheduleUnit = document.getElementById('editScheduleUnit').value;
+  const scheduleFromDate = document.getElementById('editScheduleFromDate').value;
+  const scheduleToDate = document.getElementById('editScheduleToDate').value;
+
+  if (!name) { flash('Script name required', 'error'); return; }
+  if (!path) { flash('Script path required', 'error'); return; }
+  if (!agentId) { flash('Agent selection required', 'error'); return; }
+
+  const autoStartCrash = document.getElementById('editAutoStartCrash') ? document.getElementById('editAutoStartCrash').checked : false;
+
+  const payload = {name, path, agent_id: agentId, os_type: path.endsWith('.bat') ? 'windows' : 'linux', auto_start_crashed: autoStartCrash};
+  
+  if (schedulerEnabled) {
+    if (!scheduleValue || parseInt(scheduleValue) <= 0) { flash('Valid schedule time required', 'error'); return; }
+    if (scheduleFromDate && scheduleToDate && new Date(scheduleFromDate) > new Date(scheduleToDate)) {
+      flash('From Date cannot be after To Date', 'error');
+      return;
+    }
+    payload.schedule = { 
+      value: parseInt(scheduleValue), 
+      unit: scheduleUnit,
+      from_date: scheduleFromDate || null,
+      to_date: scheduleToDate || null
+    };
+  } else {
+    payload.schedule = null;
+  }
+
+  const r = await fetch(`/api/scripts/${id}`, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const d = await r.json();
+  if (d.success) { 
+    flash('Script updated!','success'); 
+    closeModal('editModal'); 
+    loadScripts(); 
+  }
+  else flash(d.error||'Error','error');
+}
+
+function toggleSchedulerField() {
+  const isChecked = document.getElementById('addSchedulerToggle').checked;
+  document.getElementById('schedulerField').style.display = isChecked ? 'block' : 'none';
+}
+
+async function addScript() {
+  const name = document.getElementById('addName').value.trim();
+  const path = document.getElementById('addPath').value.trim();
+  const agentId = document.getElementById('addAgent').value;
+  const schedulerEnabled = document.getElementById('addSchedulerToggle').checked;
+  const autoStartCrash = document.getElementById('addAutoStartCrash') ? document.getElementById('addAutoStartCrash').checked : false;
+  
+  // Notice these two elements might not be present if the HTML structure doesn't have them
+  const scheduleValueElem = document.getElementById('addScheduleValue');
+  const scheduleUnitElem = document.getElementById('addScheduleUnit');
+  const scheduleValue = scheduleValueElem ? scheduleValueElem.value.trim() : '';
+  const scheduleUnit = scheduleUnitElem ? scheduleUnitElem.value : '';
+
+  if (!name) { flash('Script name required', 'error'); return; }
+  if (!path) { flash('Script path required', 'error'); return; }
+  if (!agentId) { flash('Agent selection required', 'error'); return; }
+
+  const payload = {
+    name, 
+    path, 
+    agent_id: agentId, 
+    os_type: path.endsWith('.bat') ? 'windows' : 'linux',
+    auto_start_crashed: autoStartCrash
+  };
+  
+  if (schedulerEnabled) {
+    const addFromDate = document.getElementById('addScheduleFromDate') ? document.getElementById('addScheduleFromDate').value : '';
+    const addToDate = document.getElementById('addScheduleToDate') ? document.getElementById('addScheduleToDate').value : '';
+    
+    if (addFromDate && addToDate && new Date(addFromDate) > new Date(addToDate)) {
+      flash('From Date cannot be after To Date', 'error');
+      return;
+    }
+
+    if (scheduleValueElem && (!scheduleValue || parseInt(scheduleValue) <= 0)) { flash('Valid schedule time required', 'error'); return; }
+    
+    let schedObj = {};
+    if (scheduleValueElem) {
+      schedObj = { value: parseInt(scheduleValue), unit: scheduleUnit };
+    }
+    
+    schedObj.from_date = addFromDate || null;
+    schedObj.to_date = addToDate || null;
+    
+    payload.schedule = schedObj;
+  }
+
+  const r = await fetch('/api/scripts', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const d = await r.json();
+  if (d.success) { 
+    flash('Script added!','success'); 
+    closeModal('addModal'); 
+    loadScripts(); 
+    document.getElementById('addName').value=''; 
+    document.getElementById('addPath').value=''; 
+    document.getElementById('addSchedulerToggle').checked=false;
+    if(document.getElementById('addAutoStartCrash')) document.getElementById('addAutoStartCrash').checked=false;
+    document.getElementById('schedulerField').style.display='none';
+    if(document.getElementById('addScheduleValue')) document.getElementById('addScheduleValue').value='';
+    if(document.getElementById('addScheduleUnit')) document.getElementById('addScheduleUnit').value='minutes';
+    if(document.getElementById('addScheduleFromDate')) document.getElementById('addScheduleFromDate').value='';
+    if(document.getElementById('addScheduleToDate')) document.getElementById('addScheduleToDate').value='';
+  }
+  else flash(d.error||'Error','error');
+}
+
+init();
+if (typeof socket !== 'undefined') {
+  socket.on('script_status', () => loadScripts());
+  socket.on('agent_status', () => loadScripts());
+}
+setInterval(loadScripts, 10000);
+</script>
+{% endblock %}

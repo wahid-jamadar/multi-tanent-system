@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Logs{% endblock %}
+{% block page_title %}Admin Logs Management{% endblock %}
+
+{% block extra_head %}
+<!-- Include jsPDF and AutoTable from CDNs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+.actions-bar {
+  display: flex; gap: 12px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap;
+}
+.search-box { flex: 1; min-width: 200px; max-width: 300px; }
+.filters { display: flex; gap: 12px; flex-wrap: wrap; flex: 2; align-items: flex-end; }
+.filters > div { display: flex; flex-direction: column; }
+.admin-log-table th { white-space: nowrap; }
+.details-btn { cursor: pointer; text-decoration: underline; color: var(--accent); }
+.pagination { display: flex; gap: 8px; margin-top: 16px; align-items: center; justify-content: flex-end; }
+.pagination button { padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); cursor: pointer; }
+.pagination button:hover:not(:disabled) { border-color: var(--accent); }
+.pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.dropdown { position: relative; display: inline-block; }
+.dropdown-btn { cursor: pointer;}
+.dropdown-content {  display: none;  position: absolute;  background: var(--bg2);  min-width: 160px;  box-shadow: var(--card-shadow);  z-index: 1;  border: 1px solid var(--border);  border-radius: 8px;  overflow: hidden; }
+.dropdown-content a {  color: var(--text2); padding: 10px 10px;  text-decoration: none;  display: block; }
+.dropdown-content a:hover {  background: var(--bg3); color: var(--text); }
+.dropdown:hover .dropdown-content {  display: block; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-heading">Admin Logs</div>
+    <div class="page-subtitle">Audit activity, exports and administrator changes</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="actions-bar">
+    <div class="search-box">
+      <label>Search Keyword</label>
+      <input type="text" id="searchInput" placeholder="Search... (module, details)">
+    </div>
+    <div class="filters">
+      <div>
+        <label>Date Range</label>
+        <select id="dateRange">
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="last7">Last 7 Days</option>
+          <option value="last30">Last 30 Days</option>
+        </select>
+      </div>
+      <div>
+        <label>Action Type</label>
+        <select id="actionType">
+           <option value="">All Actions</option>
+           <option value="Add">Add</option>
+           <option value="Create">Create</option>
+           <option value="Update">Update</option>
+           <option value="Edit">Edit</option>
+           <option value="Delete">Delete</option>
+           <option value="Login">Login</option>
+           <option value="Logout">Logout</option>
+           <option value="Backup Trigger">Backup Trigger</option>
+        </select>
+      </div>
+      <div>
+        <label>Module</label>
+        <select id="moduleSelect">
+           <option value="">All Modules</option>
+           <option value="Scripts">Scripts</option>
+           <option value="Agents">Agents</option>
+           <option value="Users">Users</option>
+           <option value="Alerts">Alerts</option>
+           <option value="Settings">Settings</option>
+           <option value="System">System</option>
+           <option value="Backups">Backups</option>
+        </select>
+      </div>
+      <div>
+        <label>Admin User</label>
+        <input type="text" id="adminUser" placeholder="Username" style="width:120px;">
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <!-- <button class="btn btn-secondary" onclick="exportPDF()">Export PDF</button> -->
+      <!-- <button class="btn btn-secondary" onclick="exportXML()">Export XML</button> -->
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-btn">
+            Export ▼
+          </button>
+
+          <div class="dropdown-content">
+            <a href="#" onclick="exportPDF()">Export PDF</a>
+            <a href="#" onclick="exportXML()">Export XML</a>
+          </div>
+        </div>
+
+  <!-- Clear Logs -->
+</div>
+      <button class="btn btn-danger" onclick="clearLogs()">Clear Logs</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="admin-log-table">
+      <thead>
+        <tr>
+          <th>Date & Time</th>
+          <th>Admin User</th>
+          <th>Action</th>
+          <th>Module</th>
+          <th>Target</th>
+          <th>Status</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody id="logsBody">
+        <tr><td colspan="7" style="text-align:center;">Loading logs...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="pagination">
+    <button id="prevPage" onclick="changePage(-1)">Prev</button>
+    <span id="pageInfo" style="font-size: 13px; font-family: var(--mono); color: var(--text2);">Page 1</span>
+    <button id="nextPage" onclick="changePage(1)">Next</button>
+  </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal-overlay" id="detailsModalOverlay">
+  <div class="modal">
+    <div class="modal-title">Log Details</div>
+    <div id="detailsContent" style="font-size:13px; color:var(--text2); line-height:1.5;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDetailsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allLogs = [];
+let filteredLogs = [];
+let currPage = 1;
+const PER_PAGE = 20;
+
+async function loadLogs() {
+  try {
+    const res = await fetch('/api/admin_logs');
+    if (!res.ok) throw new Error('Failed to fetch logs');
+    allLogs = await res.json();
+    allLogs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+    applyFilters();
+  } catch (e) {
+    document.getElementById('logsBody').innerHTML = `<tr><td colspan="7" style="color:var(--red);text-align:center;">Error loading logs</td></tr>`;
+  }
+}
+
+function renderTable() {
+  const tbody = document.getElementById('logsBody');
+  tbody.innerHTML = '';
+  
+  const start = (currPage - 1) * PER_PAGE;
+  const end = start + PER_PAGE;
+  const pageLogs = filteredLogs.slice(start, end);
+  
+  if (pageLogs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text3);">No logs found.</td></tr>`;
+  }
+
+  pageLogs.forEach(log => {
+     let dt = new Date(log.timestamp);
+     let dStr = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString();
+     
+     let aNorm = (log.action_type || "").toLowerCase();
+     let badgeCls = 'gray';
+     if(aNorm.includes('add') || aNorm.includes('create')) badgeCls = 'green';
+     else if(aNorm.includes('delete') || aNorm.includes('remove')) badgeCls = 'red';
+     else if(aNorm.includes('edit') || aNorm.includes('update')) badgeCls = 'blue';
+     else if(aNorm.includes('fail')) badgeCls = 'yellow';
+     
+     if (log.status !== 'success') {
+         badgeCls = 'yellow';
+     }
+
+     let statusBadge = log.status === 'success' ? '<span class="badge green">Success</span>' : '<span class="badge yellow">Failed</span>';
+
+     let tr = document.createElement('tr');
+     tr.innerHTML = `
+        <td style="font-family:var(--mono); font-size:11px;">${dStr}</td>
+        <td class="td-name">${log.admin_username}</td>
+        <td><span class="badge ${badgeCls}">${log.action_type}</span></td>
+        <td>${log.module_name || '-'}</td>
+        <td style="font-family:var(--mono); font-size:11px;">${log.affected_record || '-'}</td>
+        <td>${statusBadge}</td>
+        <td><span class="details-btn" onclick='showDetails(${JSON.stringify(log).replace(/'/g, "&#39;")})'>View</span></td>
+     `;
+     tbody.appendChild(tr);
+  });
+  
+  document.getElementById('pageInfo').innerText = `Page ${currPage} of ${Math.ceil(filteredLogs.length / PER_PAGE) || 1}`;
+  document.getElementById('prevPage').disabled = currPage === 1;
+  document.getElementById('nextPage').disabled = end >= filteredLogs.length;
+}
+
+function changePage(delta) {
+  currPage += delta;
+  renderTable();
+}
+
+function applyFilters() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const dateR = document.getElementById('dateRange').value;
+  const actionT = document.getElementById('actionType').value.toLowerCase();
+  const mod = document.getElementById('moduleSelect').value.toLowerCase();
+  const usr = document.getElementById('adminUser').value.toLowerCase();
+  
+  const now = new Date();
+
+  filteredLogs = allLogs.filter(log => {
+      // Date filter
+      if (dateR !== 'all') {
+         let dt = new Date(log.timestamp);
+         let diff = (now - dt) / (1000 * 3600 * 24);
+         if (dateR === 'today' && dt.toLocaleDateString() !== now.toLocaleDateString()) return false;
+         if (dateR === 'last7' && diff > 7) return false;
+         if (dateR === 'last30' && diff > 30) return false;
+      }
+      
+      if (actionT && !(log.action_type || "").toLowerCase().includes(actionT)) return false;
+      if (mod && !(log.module_name || "").toLowerCase().includes(mod)) return false;
+      if (usr && !(log.admin_username || "").toLowerCase().includes(usr)) return false;
+      
+      if (search) {
+         let str = JSON.stringify(log).toLowerCase();
+         if (!str.includes(search)) return false;
+      }
+      
+      return true;
+  });
+  
+  currPage = 1;
+  renderTable();
+}
+
+document.querySelectorAll('#searchInput, #dateRange, #actionType, #moduleSelect, #adminUser').forEach(el => {
+  el.addEventListener('input', applyFilters);
+  el.addEventListener('change', applyFilters);
+});
+
+function showDetails(log) {
+   let html = `<strong>Timestamp:</strong> ${log.timestamp}<br>
+               <strong>Admin User:</strong> ${log.admin_username}<br>
+               <strong>Action:</strong> ${log.action_type}<br>
+               <strong>Module:</strong> ${log.module_name}<br>
+               <strong>Affected Record:</strong> ${log.affected_record}<br>
+               <strong>Status:</strong> ${log.status}<br>`;
+   if(log.previous_value) html += `<br><strong>Previous Value:</strong><pre style="background:var(--bg); border:1px solid var(--border); padding:8px; border-radius:4px; max-height:150px; overflow-y:auto; margin-top:4px;">${log.previous_value}</pre>`;
+   if(log.new_value) html += `<br><strong>New Value:</strong><pre style="background:var(--bg); border:1px solid var(--border); padding:8px; border-radius:4px; max-height:150px; overflow-y:auto; margin-top:4px;">${log.new_value}</pre>`;
+   
+   document.getElementById('detailsContent').innerHTML = html;
+   document.getElementById('detailsModalOverlay').classList.add('open');
+}
+
+function closeDetailsModal() {
+   document.getElementById('detailsModalOverlay').classList.remove('open');
+}
+
+async function clearLogs() {
+   if(!confirm("Are you sure you want to clear ALL admin logs? This requires super admin privileges and cannot be undone.")) return;
+   
+   try {
+      const res = await fetch('/api/admin_logs/clear', {method: 'DELETE'});
+      const data = await res.json();
+      if(data.success) {
+          flash("Logs cleared successfully", "success");
+          loadLogs();
+      } else {
+          flash(data.error || "Failed to clear logs", "error");
+      }
+   } catch(e) {
+      flash("Error clearing logs", "error");
+   }
+}
+
+function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Admin Logs", 14, 15);
+    
+    const tableData = filteredLogs.map(l => [
+       new Date(l.timestamp).toLocaleString(),
+       l.admin_username,
+       l.action_type,
+       l.module_name,
+       l.affected_record || '-',
+       l.status
+    ]);
+
+    doc.autoTable({
+        head: [['Date/Time', 'User', 'Action', 'Module', 'Target', 'Status']],
+        body: tableData,
+        startY: 20,
+        styles: { fontSize: 8 }
+    });
+    
+    doc.save("admin_logs.pdf");
+}
+
+function exportXML() {
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<logs>\n';
+    filteredLogs.forEach(l => {
+       xml += '  <log>\n';
+       for(let k in l) {
+           let v = l[k] ? l[k].toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+           xml += `    <${k}>${v}</${k}>\n`;
+       }
+       xml += '  </log>\n';
+    });
+    xml += '</logs>';
+    
+    const blob = new Blob([xml], {type: 'application/xml'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'admin_logs.xml';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', loadLogs);
+</script>
+{% endblock %}

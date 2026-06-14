@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+{% block title %}Organizations - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1 text-white">Organizations</h1>
+    <p class="text-secondary mb-0">Companies and groups using this monitoring system</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <input type="text" id="orgSearch" class="form-control form-control-sm bg-dark border-secondary text-white" placeholder="Search organizations..." style="width: 200px; height: 38px; border-radius: 8px;">
+    <button class="btn btn-primary px-3" data-bs-toggle="modal" data-bs-target="#addOrgModal" style="height: 38px; border-radius: 8px; font-weight: 600;">
+      Add Organization
+    </button>
+  </div>
+</div>
+
+<div class="section-panel p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fb-muted); width: 35%;">NAME</th>
+          <th style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fb-muted); width: 10%;">USERS</th>
+          <th style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fb-muted); width: 10%;">AGENTS</th>
+          <th style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fb-muted); width: 15%;">CREATED</th>
+          <th style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fb-muted); width: 10%;">EDIT</th>
+          <th style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fb-muted); width: 10%;">STATUS</th>
+          <th style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fb-muted); width: 10%;">DELETE</th>
+        </tr>
+      </thead>
+      <tbody id="orgTableBody">
+        {% for org in organizations %}
+        <tr data-org-search="{{ org.name.lower() }}" {% if not org.is_active %}style="opacity: 0.6;"{% endif %}>
+          <td>
+            <div class="d-flex align-items-center">
+              <div>
+                <div class="fw-bold text-white fs-6">{{ org.name }}</div>
+                {% if org.id == 1 or org.name.lower() == 'default bank' or org.name.lower() == 'global organization' %}
+                <div class="text-secondary" style="font-size: 11px; margin-top: 2px;">default</div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="text-white">{{ stats[org.id]['users'] }}</span>
+          </td>
+          <td>
+            <span class="text-white">{{ stats[org.id]['agents'] }}</span>
+          </td>
+          <td>
+            <div class="text-secondary small local-time" data-utc="{{ org.created_at.isoformat() ~ 'Z' }}" data-format="date">{{ org.created_at.strftime('%b %d, %Y') }}</div>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-dark border-secondary px-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--fb-muted); font-size: 12px; font-weight: 600;" data-bs-toggle="modal" data-bs-target="#editOrgModal{{ org.id }}">
+              Edit
+            </button>
+          </td>
+          <td>
+            <form action="{{ url_for('toggle_organization_status', org_id=org.id) }}" method="POST" class="d-inline m-0 p-0">
+              <button type="submit" class="btn btn-sm {% if org.is_active %}btn-status-disable{% else %}btn-status-enable{% endif %} px-3" style="font-size: 12px; font-weight: 600; min-width: 78px; height: 28px;">
+                {{ 'Disable' if org.is_active else 'Enable' }}
+              </button>
+            </form>
+          </td>
+          <td>
+            <form action="{{ url_for('delete_organization', org_id=org.id) }}" method="POST" class="d-inline m-0 p-0" onsubmit="return confirm('Are you sure you want to delete this organization? Associated users, servers, and logs will be set to Global.')">
+              <button type="submit" class="btn btn-sm btn-status-delete px-3" style="font-size: 12px; font-weight: 600; height: 28px;" {% if org.id == 1 or org.name.lower() == 'default bank' or org.name.lower() == 'global organization' %}disabled title="Cannot delete the default organization"{% endif %}>
+                Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Org Modals -->
+{% for org in organizations %}
+<div class="modal fade" id="editOrgModal{{ org.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content bg-dark border-secondary shadow-lg" action="{{ url_for('edit_organization', org_id=org.id) }}" method="POST">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold text-white">Edit Organization</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-start">
+        <div class="mb-3">
+          <label class="form-label text-secondary small fw-semibold">Name</label>
+          <input type="text" name="name" class="form-control bg-dark border-secondary text-white" value="{{ org.name }}" required>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label text-secondary small fw-semibold">Add Agents</label>
+          <div class="d-flex gap-2">
+            <select class="form-select bg-dark border-secondary text-white" id="availSelect{{ org.id }}" style="flex-grow: 1;">
+              {% for agent in available_agents[org.id] %}
+              <option value="{{ agent.id }}" data-uuid="{{ agent.agent_uuid }}" data-name="{{ agent.agent_name }}">
+                {{ agent.agent_name }} - {{ agent.server.organization.name if agent.server.organization else 'No Organization' }}
+              </option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-sm btn-dark border-secondary px-3" onclick="addAgentToOrg({{ org.id }})" style="height: 38px; font-weight: 600; font-size: 13px;">Add</button>
+            <button type="button" class="btn btn-sm btn-dark border-secondary px-3" onclick="addAllAgentsToOrg({{ org.id }})" style="height: 38px; font-weight: 600; font-size: 13px;">Add All</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label text-secondary small fw-semibold mb-2">Organization Agents</label>
+          <div id="orgAgentsContainer{{ org.id }}" class="p-3 rounded" style="background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); min-height: 120px; max-height: 250px; overflow-y: auto;">
+            <div id="noAgentsPlaceholder{{ org.id }}" class="text-secondary text-center py-4" style="{% if org_agents[org.id] %}display: none;{% endif %}">
+              No agents assigned to this organization.
+            </div>
+            {% for agent in org_agents[org.id] %}
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);" id="agentCard_{{ org.id }}_{{ agent.id }}">
+              <div>
+                <div class="fw-bold text-white" style="font-size: 14px;">{{ agent.agent_name }}</div>
+                <div class="text-secondary small" style="font-size: 11px;">{{ agent.agent_uuid }}</div>
+              </div>
+              <button type="button" class="btn btn-sm btn-dark border-secondary px-3" onclick="removeAgentFromOrg({{ org.id }}, {{ agent.id }})" style="font-size: 12px; font-weight: 600;">Remove</button>
+              <input type="hidden" name="agent_ids" value="{{ agent.id }}">
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary justify-content-end gap-2">
+        <button type="button" class="btn btn-dark border-secondary" data-bs-dismiss="modal" style="font-weight: 600;">Cancel</button>
+        <button type="submit" class="btn btn-primary px-4" style="font-weight: 600;">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Add Org Modal -->
+<div class="modal fade" id="addOrgModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content bg-dark border-secondary shadow-lg" action="{{ url_for('create_organization') }}" method="POST">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold text-white">Add New Organization</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-start">
+        <div class="col-12">
+          <label class="form-label text-secondary small fw-bold">ORGANIZATION NAME</label>
+          <input type="text" name="name" class="form-control bg-dark border-secondary text-white" placeholder="e.g. Bank of America" required>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-dark border-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary px-4">Create Organization</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.getElementById("orgSearch").addEventListener("input", function() {
+    const query = this.value.trim().toLowerCase();
+    const rows = document.querySelectorAll("#orgTableBody tr");
+    rows.forEach(row => {
+      const searchVal = row.getAttribute("data-org-search") || "";
+      row.classList.toggle("d-none", query && !searchVal.includes(query));
+    });
+  });
+
+  function addAgentToOrg(orgId) {
+    const select = document.getElementById(`availSelect${orgId}`);
+    if (!select || select.selectedIndex === -1) return;
+    
+    const option = select.options[select.selectedIndex];
+    const agentId = option.value;
+    const agentName = option.getAttribute("data-name");
+    const agentUuid = option.getAttribute("data-uuid");
+    
+    // Remove from select
+    select.removeChild(option);
+    
+    // Add to container
+    const container = document.getElementById(`orgAgentsContainer${orgId}`);
+    
+    const card = document.createElement("div");
+    card.className = "d-flex justify-content-between align-items-center mb-2 p-2 rounded";
+    card.style.background = "rgba(255,255,255,0.02)";
+    card.style.border = "1px solid rgba(255,255,255,0.05)";
+    card.id = `agentCard_${orgId}_${agentId}`;
+    
+    card.innerHTML = `
+      <div>
+        <div class="fw-bold text-white" style="font-size: 14px;">${agentName}</div>
+        <div class="text-secondary small" style="font-size: 11px;">${agentUuid}</div>
+      </div>
+      <button type="button" class="btn btn-sm btn-dark border-secondary px-3" onclick="removeAgentFromOrg(${orgId}, ${agentId})" style="font-size: 12px; font-weight: 600;">Remove</button>
+      <input type="hidden" name="agent_ids" value="${agentId}">
+    `;
+    container.appendChild(card);
+    
+    // Hide placeholder
+    const placeholder = document.getElementById(`noAgentsPlaceholder${orgId}`);
+    if (placeholder) placeholder.style.display = "none";
+  }
+
+  function addAllAgentsToOrg(orgId) {
+    const select = document.getElementById(`availSelect${orgId}`);
+    if (!select) return;
+    
+    // Add options one by one
+    while (select.options.length > 0) {
+      select.selectedIndex = 0;
+      addAgentToOrg(orgId);
+    }
+  }
+
+  function removeAgentFromOrg(orgId, agentId) {
+    const card = document.getElementById(`agentCard_${orgId}_${agentId}`);
+    if (!card) return;
+    
+    const agentName = card.querySelector(".fw-bold").textContent;
+    const agentUuid = card.querySelector(".text-secondary").textContent;
+    
+    // Remove from container
+    card.parentNode.removeChild(card);
+    
+    // Add back to select
+    const select = document.getElementById(`availSelect${orgId}`);
+    const option = document.createElement("option");
+    option.value = agentId;
+    option.setAttribute("data-name", agentName);
+    option.setAttribute("data-uuid", agentUuid);
+    option.textContent = `${agentName} - No Organization`;
+    select.appendChild(option);
+    
+    // Show placeholder if empty
+    const container = document.getElementById(`orgAgentsContainer${orgId}`);
+    // Check elements except the placeholder
+    const activeCards = container.querySelectorAll("[id^='agentCard_']");
+    if (activeCards.length === 0) {
+      const placeholder = document.getElementById(`noAgentsPlaceholder${orgId}`);
+      if (placeholder) placeholder.style.display = "block";
+    }
+  }
+</script>
+
+<style>
+  /* Custom outline status and action buttons to perfectly match screenshot design */
+  .btn-status-disable {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #ef4444 !important;
+    transition: all 0.2s ease;
+  }
+  .btn-status-disable:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171 !important;
+  }
+  
+  .btn-status-enable {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #10b981 !important;
+    transition: all 0.2s ease;
+  }
+  .btn-status-enable:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #34d399 !important;
+  }
+
+  .btn-status-delete {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #ef4444 !important;
+    transition: all 0.2s ease;
+  }
+  .btn-status-delete:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171 !important;
+  }
+  .btn-status-delete:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--fb-muted) !important;
+  }
+
+  /* Consistent layout spacing for the premium table */
+  .table th, .table td {
+    padding: 14px 18px !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
+  }
+  
+  .table thead th {
+    background: rgba(15, 23, 42, 0.9) !important;
+  }
+</style>
+{% endblock %}

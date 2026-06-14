@@ -1,0 +1,8 @@
+backend_url: "https://172.100.30.191:5001"
+bootstrap_token: "R52FNdbbPsUXFFU04tWRRN00RfScXpzh1ZvwQf_r_wY"
+agent_token: ""
+agent_uuid: ""
+server_name: ""
+base_path: "C:\\"
+heartbeat_interval: 10
+log_level: INFO

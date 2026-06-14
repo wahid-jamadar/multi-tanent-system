@@ -1,0 +1,6 @@
+requests
+pyyaml
+psutil
+pyinstaller
+pywin32
+watchdog

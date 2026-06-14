@@ -1,0 +1,606 @@
+================================================================================
+         BatchHost-Pro  --  SSL / HTTPS  COMPLETE REFERENCE GUIDE
+================================================================================
+File     : ssl-details.txt
+Project  : BatchHost-Pro - Centralized Batch Script Monitoring System
+Created  : 2026-04-23
+Purpose  : Full explanation of SSL — what it is, how it works, how it is implemented in this project, 
+           and how encoding / decoding operates within the secure communication pipeline.
+================================================================================
+
+
+TABLE OF CONTENTS
+-----------------
+  1.  What Is SSL?
+  2.  SSL vs TLS — What is the Difference?
+  3.  How SSL / TLS Works (Step-by-Step)
+  4.  Key Concepts — Certificates, Keys, and Trust
+  5.  Encoding and Decoding in SSL
+  6.  How SSL Is Implemented in BatchHost-Pro (server.py)
+  7.  Impact on the BatchHost-Pro System
+  8.  Self-Signed Certificate vs CA-Signed Certificate
+  9.  How the Agent Communicates Over HTTPS
+ 10.  Security Improvements SSL Brings to This System
+ 11.  Potential Issues and How to Handle Them
+ 12.  Quick Reference — SSL File Locations in This Project
+
+
+================================================================================
+  1.  WHAT IS SSL?
+================================================================================
+
+SSL stands for "Secure Sockets Layer."
+
+  In plain English:
+  SSL is a security technology that creates an ENCRYPTED TUNNEL between two
+  computers (e.g., your browser and the server) so that no one in between
+  can read, steal, or tamper with the data being sent.
+
+  Think of it this way:
+    -- Without SSL: You are shouting sensitive information in a crowded room.
+                    Anyone can hear you (login passwords, tokens, logs, etc.)
+
+    -- With SSL:    You are passing a locked briefcase between two people.
+                    Only the sender and receiver have the key to open it.
+
+  SSL was originally developed by Netscape in 1995. It has since been replaced
+  by a more secure protocol called TLS (Transport Layer Security), but the term
+  "SSL" is still commonly used to refer to both SSL and TLS.
+
+  When you see "https://" in a browser URL instead of "http://", it means SSL/
+  TLS is active and protecting the connection.
+
+
+================================================================================
+  2.  SSL vs TLS — WHAT IS THE DIFFERENCE?
+================================================================================
+
+  SSL 2.0  (1995) -- Original version. Very weak. Deprecated and abandoned.
+  SSL 3.0  (1996) -- Better, but still broken (POODLE attack in 2014).
+  TLS 1.0  (1999) -- First TLS version. Based on SSL 3.0. Deprecated.
+  TLS 1.1  (2006) -- Added protections. Also deprecated.
+  TLS 1.2  (2008) -- Widely used. Strong. Still in use today.
+  TLS 1.3  (2018) -- Fastest and most secure. Current standard.
+
+  In this project, when we say "SSL", we mean TLS 1.2 or TLS 1.3 which is
+  what Python's ssl module and the Flask development server use by default.
+  The old broken SSL protocols are NOT used.
+
+
+================================================================================
+  3.  HOW SSL / TLS WORKS  (STEP-BY-STEP)
+================================================================================
+
+  When a browser (or agent) connects to https://server:5000, the following
+  sequence of events happens automatically. This is called the "TLS Handshake":
+
+  STEP 1 — CLIENT HELLO
+  ─────────────────────
+    The client (browser / agent) sends:
+      - A list of cipher suites it supports (encryption algorithms)
+      - A random number (Client Random)
+      - The TLS version it wants to use
+
+  STEP 2 — SERVER HELLO
+  ─────────────────────
+    The server responds with:
+      - The chosen cipher suite
+      - A random number (Server Random)
+      - Its SSL CERTIFICATE (contains the server's PUBLIC KEY)
+
+  STEP 3 — CERTIFICATE VERIFICATION
+  ──────────────────────────────────
+    The client checks:
+      - Is the certificate valid (not expired)?
+      - Is it issued by a trusted Certificate Authority (CA)?
+      - Does the hostname in the certificate match the server's hostname?
+
+    For SELF-SIGNED certificates (like ours), browsers will show a warning
+    because the certificate is not issued by a recognized CA.
+    You can manually accept it and proceed.
+
+  STEP 4 — KEY EXCHANGE
+  ─────────────────────
+    Using the server's public key, the client and server agree on a
+    "session key" (a shared secret) that will be used to encrypt all
+    further communication. This key is only known to the two parties.
+
+    Modern TLS uses a method called "Diffie-Hellman Key Exchange" or
+    "Elliptic Curve Diffie-Hellman (ECDHE)" so neither side ever sends
+    the actual encryption key over the wire.
+
+  STEP 5 — HANDSHAKE COMPLETE
+  ────────────────────────────
+    Both sides confirm the handshake succeeded by sending an encrypted
+    "Finished" message. From this point, all data is fully encrypted.
+
+  STEP 6 — ENCRYPTED DATA TRANSFER
+  ──────────────────────────────────
+    Every request and response is now encrypted using symmetric encryption
+    (e.g., AES-256) with the session key agreed in Step 4.
+
+    Diagram:
+    ─────────────────────────────────────────────────────────────────────
+    [Browser/Agent]                              [BatchHost-Pro Server]
+         │                                                 │
+         │──── STEP 1: ClientHello ──────────────────────▶│
+         │◀─── STEP 2: ServerHello + Certificate ─────────│
+         │──── STEP 3: Verify Certificate ────────────────│ (local check)
+         │──── STEP 4: Key Exchange (Encrypted) ──────────▶│
+         │◀─── STEP 4: Key Exchange (Encrypted) ──────────│
+         │──── STEP 5: Finished (Encrypted) ──────────────▶│
+         │◀─── STEP 5: Finished (Encrypted) ──────────────│
+         │════════════ Encrypted Data Channel ════════════ │
+         │──── POST /api/auth/login (ENCRYPTED) ──────────▶│
+         │◀─── 200 OK {"success": true} (ENCRYPTED) ───────│
+    ─────────────────────────────────────────────────────────────────────
+
+
+================================================================================
+  4.  KEY CONCEPTS — CERTIFICATES, KEYS, AND TRUST
+================================================================================
+
+  4.1  PRIVATE KEY (key.pem)
+  ──────────────────────────
+    - A secret key that ONLY the server holds and must NEVER share with anyone.
+    - Used to decrypt data that was encrypted with the public key.
+    - Used to digitally sign the certificate to prove authenticity.
+    - In BatchHost-Pro, this is stored as: key.pem in the project root.
+    - Algorithm used: RSA-2048 (generated by the cryptography library)
+
+    WARNING: If the private key is ever leaked, the entire secure connection
+    can be compromised. Keep key.pem safe and never commit it to version control.
+
+  4.2  PUBLIC KEY (embedded in cert.pem)
+  ───────────────────────────────────────
+    - Derived from the private key, but it is safe to share publicly.
+    - The browser uses this to encrypt data sent to the server.
+    - Only the server's private key can decrypt it.
+    - It is embedded inside the certificate file (cert.pem).
+
+  4.3  SSL CERTIFICATE (cert.pem)
+  ────────────────────────────────
+    - A digital document that contains:
+        * The server's Public Key
+        * Server identity information (hostname, organization, country)
+        * Validity period (start and end date)
+        * Digital signature from a Certificate Authority (CA)
+    - In BatchHost-Pro, our certificate is SELF-SIGNED:
+        * The certificate is signed by our own private key (not a trusted CA)
+        * Subject = Issuer = "172.100.31.40"
+        * Valid for: 365 days from generation
+        * Algorithm: SHA-256
+
+  4.4  CERTIFICATE AUTHORITY (CA)
+  ────────────────────────────────
+    - A trusted third party (e.g., Let's Encrypt, DigiCert, GlobalSign)
+      that verifies server identity and signs certificates.
+    - Browsers and operating systems ship with a list of trusted CAs built-in.
+    - If a certificate is signed by a trusted CA, browsers trust it silently.
+    - If self-signed (our case), browsers show a "Not Secure" warning because
+      no known CA vouches for the server's identity.
+
+
+================================================================================
+  5.  ENCODING AND DECODING IN SSL
+================================================================================
+
+  5.1  WHAT IS ENCODING?
+  ──────────────────────
+    Encoding is the process of CONVERTING DATA INTO A SPECIFIC FORMAT
+    for transmission or storage. It is NOT encryption — it does not hide data.
+
+    Examples in this project:
+      a) PEM Encoding (Privacy Enhanced Mail):
+         - cert.pem and key.pem are stored in PEM format.
+         - PEM is Base64-encoded binary data with header/footer lines.
+         - Example of PEM format:
+             -----BEGIN CERTIFICATE-----
+             MIIDXTCCAkWgAwIBAgIJAM... (Base64 encoded binary)
+             -----END CERTIFICATE-----
+         - The "BEGIN CERTIFICATE" and "END CERTIFICATE" markers tell tools
+           what type of data is inside.
+
+      b) Base64 Encoding:
+         - Binary data (like a certificate or key) is converted to printable
+           ASCII characters using the Base64 alphabet (A-Z, a-z, 0-9, +, /).
+         - This makes it safe to store in text files and transmit as text.
+         - Base64 is ENCODING, not encryption. Anyone can decode it.
+         - In SSL, Base64 is only used to store the certificate and key files
+           in a readable text format. The actual security comes from the
+           cryptographic algorithms, not from Base64.
+
+      c) JSON Encoding (used throughout BatchHost-Pro API):
+         - All API request and response bodies are JSON-encoded text.
+         - When SSL is active, this JSON is ADDITIONALLY encrypted by TLS
+           before being sent over the network.
+         - So the flow is: Python dict → JSON string → TLS encryption → network
+
+  5.2  WHAT IS DECODING?
+  ──────────────────────
+    Decoding is the REVERSE of encoding. It converts the formatted data
+    back into its original form.
+
+    In BatchHost-Pro SSL flow:
+      a) When the server starts, Python's cryptography library reads key.pem
+         and cert.pem — it BASE64-DECODES the PEM files internally to get
+         the raw binary certificate and private key data.
+
+      b) When an agent or browser sends an HTTPS request:
+           - TLS DECRYPTS the encrypted payload using the session key.
+           - Flask then reads the decrypted HTTP body.
+           - The JSON body is parsed (decoded) back into a Python dict.
+
+  5.3  ENCRYPTION vs ENCODING — THE KEY DIFFERENCE
+  ──────────────────────────────────────────────────
+    ┌─────────────────┬──────────────────────────────────┬──────────────────┐
+    │ Property        │ ENCODING (Base64, PEM, JSON)      │ ENCRYPTION (TLS) │
+    ├─────────────────┼──────────────────────────────────┼──────────────────┤
+    │ Hides data?     │ NO — anyone can reverse it        │ YES              │
+    │ Requires key?   │ NO — standard reversible process  │ YES — secret key │
+    │ Purpose         │ Format conversion / transport      │ Confidentiality  │
+    │ Example         │ Base64("hello") = "aGVsbG8="      │ AES("hello", key)│
+    └─────────────────┴──────────────────────────────────┴──────────────────┘
+
+  5.4  SYMMETRIC vs ASYMMETRIC ENCRYPTION IN SSL
+  ───────────────────────────────────────────────
+    ASYMMETRIC (used during handshake):
+      - Two different keys: Public Key (encrypt) + Private Key (decrypt)
+      - Slow but allows secure key exchange between strangers
+      - Algorithm: RSA-2048 (as generated in BatchHost-Pro)
+      - Used to: Securely agree on a shared session key
+
+    SYMMETRIC (used for actual data):
+      - One shared key: same key for both encrypt and decrypt
+      - Very fast — used for all actual data transfer
+      - Algorithm: AES-256-GCM (typically chosen by TLS 1.3)
+      - Used to: Encrypt every HTTP request/response after handshake
+
+
+================================================================================
+  6.  HOW SSL IS IMPLEMENTED IN BatchHost-Pro (server.py)
+================================================================================
+
+  The SSL implementation is at the bottom of server.py, in the __main__ block.
+  Here is the exact code and what each part does:
+
+  ─────────────────────────────────────────────────────────────────────────────
+  if __name__ == "__main__":
+      cert_path = os.path.join(BASE_DIR, "cert.pem")
+      key_path  = os.path.join(BASE_DIR, "key.pem")
+  ─────────────────────────────────────────────────────────────────────────────
+  PURPOSE: Defines the expected locations of the certificate and key files.
+           BASE_DIR = the directory where server.py lives (c:\BatchHost-Pro\)
+           So it looks for:
+             c:\BatchHost-Pro\cert.pem
+             c:\BatchHost-Pro\key.pem
+
+  ─────────────────────────────────────────────────────────────────────────────
+  ssl_context = None
+  if os.path.exists(cert_path) and os.path.exists(key_path):
+      ssl_context = (cert_path, key_path)
+  ─────────────────────────────────────────────────────────────────────────────
+  PURPOSE: If both files already exist, use them directly.
+           ssl_context = (cert_path, key_path) is the format Flask expects
+           to load a certificate and private key pair.
+
+  ─────────────────────────────────────────────────────────────────────────────
+  else:
+      from cryptography import x509
+      from cryptography.x509.oid import NameOID
+      from cryptography.hazmat.primitives import hashes
+      from cryptography.hazmat.primitives.asymmetric import rsa
+      from cryptography.hazmat.primitives import serialization
+
+      key = rsa.generate_private_key(
+          public_exponent=65537,
+          key_size=2048,
+      )
+  ─────────────────────────────────────────────────────────────────────────────
+  PURPOSE: If the cert files don't exist, auto-generate a new private key.
+           public_exponent=65537 — standard RSA exponent (prime number, fast)
+           key_size=2048         — 2048-bit key (industry-standard strong key)
+           This uses Python's cryptography library (pip install cryptography).
+
+  ─────────────────────────────────────────────────────────────────────────────
+      subject = issuer = x509.Name([
+          x509.NameAttribute(NameOID.COMMON_NAME, u"172.100.31.40"),
+      ])
+  ─────────────────────────────────────────────────────────────────────────────
+  PURPOSE: Defines the certificate identity.
+           subject = WHO the certificate is for (172.100.31.40)
+           issuer  = WHO signed it (also 172.100.31.40 = self-signed)
+           In a CA-issued cert, issuer would be "Let's Encrypt" or similar.
+
+  ─────────────────────────────────────────────────────────────────────────────
+      cert = x509.CertificateBuilder() \
+          .subject_name(subject)        \
+          .issuer_name(issuer)           \
+          .public_key(key.public_key())  \
+          .serial_number(x509.random_serial_number()) \
+          .not_valid_before(datetime.utcnow())         \
+          .not_valid_after(datetime.utcnow() + timedelta(days=365)) \
+          .sign(key, hashes.SHA256())
+  ─────────────────────────────────────────────────────────────────────────────
+  PURPOSE: Builds the certificate structure:
+           - public_key()      -- Embeds the public portion of our RSA key
+           - serial_number()   -- Unique ID for this certificate
+           - not_valid_before  -- Certificate is valid starting NOW
+           - not_valid_after   -- Certificate expires in 365 days (1 year)
+           - .sign(key, SHA256)-- Digitally signs the cert with our private key
+             SHA256 = the secure hash algorithm used for the signature
+
+  ─────────────────────────────────────────────────────────────────────────────
+      with open(key_path, "wb") as f:
+          f.write(key.private_bytes(
+              encoding=serialization.Encoding.PEM,
+              format=serialization.PrivateFormat.TraditionalOpenSSL,
+              encryption_algorithm=serialization.NoEncryption(),
+          ))
+      with open(cert_path, "wb") as f:
+          f.write(cert.public_bytes(serialization.Encoding.PEM))
+  ─────────────────────────────────────────────────────────────────────────────
+  PURPOSE: Saves the generated key and certificate to disk as PEM files.
+           Encoding.PEM      = save as Base64 text (human-readable format)
+           NoEncryption()    = the key file itself is NOT password-protected
+                               (for convenience; password protection optional)
+           TraditionalOpenSSL = widely compatible key file format
+
+  ─────────────────────────────────────────────────────────────────────────────
+      except ImportError:
+          ssl_context = 'adhoc'
+  ─────────────────────────────────────────────────────────────────────────────
+  PURPOSE: Fallback. If the cryptography library is not installed, Flask uses
+           its built-in 'adhoc' SSL mode (requires pyOpenSSL).
+           'adhoc' generates a temporary certificate in memory only (not saved).
+
+  ─────────────────────────────────────────────────────────────────────────────
+  app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=ssl_context)
+  ─────────────────────────────────────────────────────────────────────────────
+  PURPOSE: Starts the Flask development server with SSL enabled.
+           host="0.0.0.0"       -- Listen on all network interfaces
+           port=5000             -- HTTPS on port 5000
+           ssl_context=...       -- Activates HTTPS using our cert + key
+           When ssl_context is not None, Flask/Werkzeug wraps every connection
+           with Python's built-in ssl module (which uses OpenSSL underneath).
+
+
+================================================================================
+  7.  IMPACT ON THE BatchHost-Pro SYSTEM
+================================================================================
+
+  7.1  PROTOCOL CHANGE  --  http:// becomes https://
+  ───────────────────────────────────────────────────
+    BEFORE SSL:  http://your-server:5000
+    AFTER SSL:   https://your-server:5000
+
+    All internal links, agent configurations, and browser bookmarks must
+    use the https:// prefix. The server no longer accepts plain HTTP.
+
+  7.2  BROWSER WARNING ON FIRST ACCESS
+  ──────────────────────────────────────
+    Since our certificate is self-signed (not from a trusted CA), browsers
+    will display a security warning on first visit:
+      Chrome : "Your connection is not private" (NET::ERR_CERT_AUTHORITY_INVALID)
+      Firefox: "Warning: Potential Security Risk Ahead"
+      Edge   : "Your connection isn't private"
+
+    HOW TO PROCEED:
+      Chrome    → Click "Advanced" → "Proceed to <your-server> (unsafe)"
+      Firefox   → Click "Advanced" → "Accept the Risk and Continue"
+      Edge      → Click "Advanced" → "Continue to <your-server> (unsafe)"
+
+    This warning is ONLY because we self-signed the certificate. The
+    encryption itself is fully functional and secure.
+
+  7.3  AGENT COMMUNICATION IMPACT
+  ────────────────────────────────
+    The Windows batch file agent (batchhost-pro_agent.bat) makes HTTP API
+    calls to the server. With SSL enabled, the agent URLs must change from:
+      http://SERVER:5000/api/agent/...
+    to:
+      https://SERVER:5000/api/agent/...
+
+    Additionally, agents using curl or PowerShell with self-signed certs must
+    disable certificate verification (only for internal/trusted networks):
+      curl --insecure https://server:5000/api/agent/heartbeat ...
+      PowerShell: [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+
+  7.4  SESSION SECURITY
+  ─────────────────────
+    Flask sessions (app.secret_key) are stored as signed cookies. With HTTPS:
+      - Session cookies are transmitted encrypted
+      - The "Secure" cookie flag can be set so cookies ONLY travel over HTTPS
+      - Prevents session hijacking via network sniffing
+
+  7.5  API TOKEN SECURITY
+  ────────────────────────
+    The agent X-Agent-Token header is sent in every heartbeat/status request.
+    Without SSL: The token travels as plain text — anyone on the network can
+                 steal it and impersonate an agent.
+    With SSL:    The token is encrypted inside the TLS tunnel — interceptors
+                 see only encrypted gibberish.
+
+  7.6  LOGIN CREDENTIALS SECURITY
+  ─────────────────────────────────
+    POST /api/auth/login sends username + password.
+    Without SSL: Credentials visible in plain text on the network.
+    With SSL:    Credentials encrypted — cannot be read by network sniffers.
+                 (Note: passwords are ALSO SHA-256 hashed before storage,
+                  providing an additional layer of protection.)
+
+  7.7  LOG AND BACKUP DATA SECURITY
+  ────────────────────────────────────
+    Log data (system logs, script output) and backup file downloads are
+    sensitive operational data. With SSL, all this data is encrypted in transit.
+
+  7.8  PERFORMANCE IMPACT
+  ────────────────────────
+    SSL adds a small overhead:
+    - TLS Handshake: ~1-5ms additional latency per new connection
+    - Encryption/Decryption of data: Negligible on modern CPUs (AES hardware)
+    - Certificate generation (one-time): ~1-2 seconds on first startup
+    For this system (internal monitoring tool), the overhead is imperceptible.
+
+  7.9  PORT BEHAVIOUR
+  ────────────────────
+    The server still runs on port 5000 (same port, now HTTPS).
+    Standard HTTPS is port 443, but this project uses 5000 for simplicity
+    since it is an internal tool, not a public web server.
+
+
+================================================================================
+  8.  SELF-SIGNED CERTIFICATE vs CA-SIGNED CERTIFICATE
+================================================================================
+
+  ┌──────────────────────┬────────────────────────────┬──────────────────────┐
+  │ Feature              │ Self-Signed (Our Setup)     │ CA-Signed (e.g. Let's│
+  │                      │                             │ Encrypt)             │
+  ├──────────────────────┼────────────────────────────┼──────────────────────┤
+  │ Browser Trust        │ Warning shown               │ Trusted silently     │
+  │ Cost                 │ Free                        │ Free (Let's Encrypt) │
+  │ Domain Required?     │ No                          │ Yes (public domain)  │
+  │ Valid Duration       │ 365 days (our setting)      │ 90 days (Let's Enc.) │
+  │ Encryption Strength  │ Equal (same TLS)            │ Equal (same TLS)     │
+  │ Ideal For            │ Internal/intranet tools     │ Public-facing sites  │
+  │ Renewal              │ Manual / auto on restart    │ Auto (certbot)       │
+  └──────────────────────┴────────────────────────────┴──────────────────────┘
+
+  Our self-signed certificate is PERFECTLY APPROPRIATE for BatchHost-Pro
+  since it is an internal monitoring system accessed within a trusted network.
+
+
+================================================================================
+  9.  HOW THE AGENT COMMUNICATES OVER HTTPS
+================================================================================
+
+  The typical agent communication flow after SSL is enabled:
+
+  [Agent on Windows Machine]                    [BatchHost-Pro Server: 5000]
+  ───────────────────────────                   ─────────────────────────────
+  1. Agent starts → reads SERVER_URL from config
+     SERVER_URL = "https://192.168.1.100:5000"
+
+  2. TLS Handshake:
+     Agent → HTTPS GET → Server returns cert.pem (public key)
+     Agent verifies cert (may need --insecure flag for self-signed)
+     Shared session key established
+
+  3. POST /api/agent/register (ENCRYPTED)
+     Body: { "agent_id": "WIN-PC-001", "hostname": "WIN-PC-001", "os_type": "windows" }
+     Server authenticates and returns: { "token": "uuid-xxxx", "agent_id": "WIN-PC-001" }
+     Token is encrypted in transit — safe from eavesdroppers
+
+  4. Every 60 seconds — POST /api/agent/heartbeat (ENCRYPTED)
+     Headers: X-Agent-Token: uuid-xxxx  ← encrypted, cannot be intercepted
+     Body: { "cpu": 12.5, "memory": 68.3, "running_scripts": ["C:/jobs/run.bat"] }
+
+  5. On script completion — POST /api/agent/script-status (ENCRYPTED)
+     Body: { "script_path": "...", "status": "completed", "exit_code": 0 }
+
+  Every byte of data above is encrypted by TLS before leaving the agent machine.
+
+
+================================================================================
+ 10.  SECURITY IMPROVEMENTS SSL BRINGS TO THIS SYSTEM
+================================================================================
+
+  Without SSL              │  With SSL (Current Implementation)
+  ─────────────────────────┼──────────────────────────────────────────────────
+  Passwords sent as text   │  Passwords encrypted end-to-end
+  Agent tokens exposed     │  Agent tokens hidden from network traffic
+  Session cookies stealable│  Cookies secured in TLS tunnel
+  Script paths visible     │  All API data encrypted
+  Log data interceptable   │  Logs/backups encrypted in transit
+  Man-in-the-middle risk   │  MITM attacks prevented by certificate verification
+  No integrity checking    │  TLS guarantees data integrity (tamper detection)
+
+  SSL / TLS Provides Three Core Guarantees:
+    ┌────────────────────┬─────────────────────────────────────────────────┐
+    │ 1. CONFIDENTIALITY │ Data cannot be read by third parties            │
+    │ 2. INTEGRITY       │ Data cannot be modified without detection       │
+    │ 3. AUTHENTICATION  │ Server identity verified via certificate        │
+    └────────────────────┴─────────────────────────────────────────────────┘
+
+
+================================================================================
+ 11.  POTENTIAL ISSUES AND HOW TO HANDLE THEM
+================================================================================
+
+  ISSUE 1: Browser shows "Not Secure" warning
+  ────────────────────────────────────────────
+  CAUSE   : Self-signed certificate not trusted by browsers.
+  SOLUTION: Click "Advanced" → "Proceed anyway". This is expected behavior
+            for self-signed certificates on internal tools.
+
+  ISSUE 2: Agent fails to connect after SSL is enabled
+  ─────────────────────────────────────────────────────
+  CAUSE   : Agent URLs still use http:// prefix.
+  SOLUTION: Update batchhost-pro_agent.bat to use https:// in SERVER_URL.
+            Add --insecure flag to curl commands (or equivalent).
+
+  ISSUE 3: Certificate expired after 365 days
+  ─────────────────────────────────────────────
+  CAUSE   : Our self-signed cert has a 1-year validity window.
+  SOLUTION: Delete cert.pem and key.pem from c:\BatchHost-Pro\.
+            Restart server.py — new certificate auto-generated on startup.
+
+  ISSUE 4: cryptography library not installed
+  ────────────────────────────────────────────
+  CAUSE   : The cryptography package is not in the Python environment.
+  SOLUTION: pip install cryptography
+            Without it, Flask falls back to 'adhoc' SSL (requires pyOpenSSL).
+
+  ISSUE 5: Port 5000 already in use
+  ──────────────────────────────────
+  CAUSE   : Another process is using port 5000.
+  SOLUTION: netstat -ano | findstr :5000
+            Find the PID and terminate it, or change port in server.py.
+
+  ISSUE 6: key.pem accidentally deleted but cert.pem exists
+  ──────────────────────────────────────────────────────────
+  CAUSE   : The server checks for BOTH files. If one is missing, it regenerates.
+  SOLUTION: Delete both files and restart. A mismatched cert/key pair will
+            cause SSL handshake failures.
+
+
+================================================================================
+ 12.  QUICK REFERENCE — SSL FILE LOCATIONS IN THIS PROJECT
+================================================================================
+
+  File / Setting       Location                          Description
+  ─────────────────────────────────────────────────────────────────────────────
+  cert.pem             c:\BatchHost-Pro\cert.pem         SSL certificate (public)
+  key.pem              c:\BatchHost-Pro\key.pem          Private key (SECRET)
+  server.py SSL block  server.py lines 872–923           SSL startup logic
+  Flask ssl_context    app.run(..., ssl_context=...)      Activates HTTPS
+  Access URL           https://172.100.31.40:5000             Browser/Agent URL
+  ─────────────────────────────────────────────────────────────────────────────
+
+  IMPORTANT: NEVER commit key.pem to a Git repository or share it publicly.
+             The certificate (cert.pem) is safe to share — it is public info.
+
+
+================================================================================
+  SUMMARY
+================================================================================
+
+  SSL in BatchHost-Pro:
+  ─────────────────────
+    * Encrypts ALL traffic between browsers, agents, and the server
+    * Auto-generates a self-signed RSA-2048 / SHA-256 certificate on startup
+    * Certificate is valid for 365 days and saved to cert.pem / key.pem
+    * Uses PEM encoding (Base64) to store certificate and key as text files
+    * Falls back to Flask 'adhoc' SSL if the cryptography library is missing
+    * Protects login passwords, agent tokens, logs, and all API data in transit
+
+  Encoding/Decoding in this system:
+  ───────────────────────────────────
+    * PEM / Base64 encoding: Used to save/read cert and key files (NOT security)
+    * JSON encoding/decoding: Used for all API request and response bodies
+    * TLS encryption/decryption: The actual security layer protecting all data
+    * SHA-256 hashing: Used for password storage in users.json (one-way, secure)
+
+================================================================================
+  END OF SSL DETAILS DOCUMENT
+================================================================================

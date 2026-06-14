@@ -1,0 +1,24 @@
+agent_token: ""
+agent_uuid: ""
+allowed_paths: &id001
+- all
+backend_url: https://172.100.30.191:5001
+base_path: C:\
+bootstrap_token: R52FNdbbPsUXFFU04tWRRN00RfScXpzh1ZvwQf_r_wY
+heartbeat_interval: 30
+log_level: INFO
+server_name: ""
+machine_fingerprint: ""
+agent:
+  id: ""
+  token: ""
+  name: ""
+server:
+  url: https://172.100.30.191:5001
+monitoring:
+  heartbeat_interval: 30
+transfer:
+  chunk_size: 1048576
+  retry_limit: 5
+  compression: true
+  encryption: true

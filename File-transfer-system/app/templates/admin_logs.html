@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Super Admin Actions Log - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Super Admin Actions Log</h1>
+    <p class="text-secondary mb-0">Security audit trail documenting actions taken exclusively by Super Administrators.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <div class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 d-flex align-items-center gap-2 px-3 py-2">
+      <i class="bi bi-shield-lock-fill"></i>
+      SECURITY AUDITING ACTIVE
+    </div>
+  </div>
+</div>
+
+<!-- Main Panel -->
+<div class="section-panel p-0 overflow-hidden shadow-lg border border-secondary border-opacity-25">
+  <!-- Table Header Controls -->
+  <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center bg-dark bg-opacity-20">
+    <h2 class="h6 mb-0 fw-bold d-flex align-items-center gap-2">
+      <i class="bi bi-list-stars text-primary"></i> Action Log Entries
+    </h2>
+    <div class="d-flex gap-2">
+      <!-- Search Filter -->
+      <div class="input-group input-group-sm" style="width: 250px">
+        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
+        <input type="text" id="actionFilter" class="form-control bg-dark border-secondary text-white" placeholder="Search actions, users, IPs...">
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit Table -->
+  <div class="table-responsive" style="max-height: 700px; overflow-y: auto;">
+    <table class="table align-middle" id="auditTable">
+      <thead>
+        <tr>
+          <th style="width: 180px;">Timestamp</th>
+          <th style="width: 150px;">Super Admin</th>
+          <th style="width: 180px;">Action</th>
+          <th style="width: 180px;">Resource Target</th>
+          <th style="width: 150px;">IP Address</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for audit in audits %}
+        <tr class="audit-row">
+          <td>
+            <span class="text-secondary small font-monospace">
+              <i class="bi bi-clock me-1"></i>
+              <span class="local-time" data-utc="{{ audit.created_at.isoformat() ~ 'Z' }}" data-format="datetime-seconds">
+                {{ audit.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+              </span>
+            </span>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 24px; height: 24px; font-size: 11px; background: linear-gradient(135deg, var(--fb-primary), var(--fb-indigo));">
+                {{ audit.user.username[:1].upper() if audit.user else "S" }}
+              </span>
+              <span class="fw-semibold text-light">{{ audit.user.username if audit.user else "System" }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge status-info text-capitalize">{{ audit.action }}</span>
+          </td>
+          <td>
+            {% if audit.entity_type %}
+            <span class="text-secondary small">
+              <code class="text-secondary">{{ audit.entity_type }}</code> 
+              <span class="text-muted">(ID: {{ audit.entity_id or 'N/A' }})</span>
+            </span>
+            {% else %}
+            <span class="text-muted small">N/A</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="text-secondary small font-monospace">{{ audit.ip_address or '0.0.0.0' }}</span>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-dark btn-sm border-secondary py-1 px-2 text-secondary" style="font-size: 11px;" type="button" data-bs-toggle="collapse" data-bs-target="#auditCtx{{ audit.id }}">
+                <i class="bi bi-braces"></i> View Payload
+              </button>
+            </div>
+          </td>
+        </tr>
+        <!-- Expandable Details Row -->
+        <tr class="detail-row bg-dark bg-opacity-10">
+          <td colspan="6" class="p-0 border-0">
+            <div class="collapse border-bottom border-secondary border-opacity-25" id="auditCtx{{ audit.id }}">
+              <div class="p-3 bg-dark bg-opacity-30">
+                <div class="mb-2 text-secondary small fw-semibold">
+                  <i class="bi bi-info-circle me-1"></i> User Agent: <span class="text-muted font-monospace">{{ audit.user_agent }}</span>
+                </div>
+                <pre class="bg-dark text-light p-3 rounded small mb-0 border border-secondary border-opacity-25" style="white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; font-size: 12px;"><code>{{ audit.details | tojson(indent=2) }}</code></pre>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-secondary py-5">
+            <i class="bi bi-database-exclamation display-6 d-block mb-3 text-muted"></i>
+            No actions recorded for Super Administrators.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  #auditTable tr {
+    transition: background-color 0.15s ease;
+  }
+  .audit-row:hover {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+  }
+  .detail-row td {
+    padding: 0 !important;
+  }
+  code {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function() {
+    const filterInput = document.getElementById('actionFilter');
+    const tableRows = document.querySelectorAll('#auditTable tbody tr.audit-row');
+
+    filterInput.addEventListener('input', () => {
+      const query = filterInput.value.toLowerCase().trim();
+      
+      tableRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        // The collapse row right below the main row
+        const nextRow = row.nextElementSibling;
+        
+        if (!query || text.includes(query)) {
+          row.classList.remove('d-none');
+          if (nextRow && nextRow.classList.contains('detail-row')) {
+            nextRow.classList.remove('d-none');
+          }
+        } else {
+          row.classList.add('d-none');
+          if (nextRow && nextRow.classList.contains('detail-row')) {
+            // Also collapse the div inside if it is shown
+            const collapseDiv = nextRow.querySelector('.collapse');
+            if (collapseDiv && collapseDiv.classList.contains('show')) {
+              // Hide using bootstrap if available
+              if (window.bootstrap) {
+                const bCollapse = bootstrap.Collapse.getInstance(collapseDiv);
+                if (bCollapse) bCollapse.hide();
+              } else {
+                collapseDiv.classList.remove('show');
+              }
+            }
+            nextRow.classList.add('d-none');
+          }
+        }
+      });
+    });
+  })();
+</script>
+{% endblock %}

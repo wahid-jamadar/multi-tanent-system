@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% block title %}Servers Management - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Managed Infrastructure</h1>
+    <p class="text-secondary mb-0">Register and configure servers for cross-environment communication.</p>
+  </div>
+  {% if user_has_role(user, 'Super Admin', 'Admin') %}
+  <div>
+    <button class="btn btn-primary d-flex align-items-center gap-2 px-3" data-bs-toggle="modal" data-bs-target="#addServerModal">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+      </svg>
+      Add Server
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Servers Table -->
+<div class="section-panel p-0 overflow-hidden">
+  <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center bg-dark bg-opacity-25">
+    <div class="d-flex align-items-center gap-3">
+      <h2 class="h6 mb-0 fw-bold">Active Servers</h2>
+      <span class="badge bg-dark border border-secondary text-secondary">{{ servers|length }} Total</span>
+    </div>
+    <div class="d-flex gap-2">
+      <input type="text" id="serverSearch" class="form-control form-control-sm bg-dark border-secondary text-white" placeholder="Search servers..." style="width: 200px">
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Name / ID</th>
+          <th>Organization</th>
+          <th>Connection</th>
+          <th>OS / Protocol</th>
+          <th>Status</th>
+          <th>Base Path</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="serverTableBody">
+        {% for server in servers %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div class="p-2 rounded bg-dark border border-secondary border-opacity-25 text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-server" viewBox="0 0 16 16">
+                  <path d="M1.333 2.667C1.333 1.194 4.315 0 8 0s6.667 1.194 6.667 2.667V4c0 1.473-2.982 2.667-6.667 2.667S1.333 5.473 1.333 4V2.667Z"/>
+                  <path d="M1.333 6.334v3c0 1.473 2.982 2.667 6.667 2.667s6.667-1.194 6.667-2.667v-3C14.667 7.807 11.685 9 8 9s-6.667-1.193-6.667-2.666Z"/>
+                  <path d="M1.333 10.334v3C1.333 14.806 4.315 16 8 16s6.667-1.194 6.667-2.667v-3c0 1.473-2.982 2.667-6.667 2.667s-6.667-1.194-6.667-2.667Z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="fw-bold">{{ server.name }}</div>
+                <div class="text-secondary x-small">ID: {{ server.id }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            {% if server.organization %}
+            <span class="badge bg-dark border border-secondary text-indigo x-small" style="color: #818cf8 !important; border-color: rgba(99,102,241,0.25) !important;">{{ server.organization.name }}</span>
+            {% else %}
+            <span class="badge bg-dark border border-secondary text-secondary x-small">System / Global</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="text-info small font-monospace">{{ server.hostname }}</div>
+            <div class="text-secondary small">{{ server.ip_address or "No IP" }}</div>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="text-secondary small d-flex align-items-center gap-1">
+                {% if server.os_type == 'windows' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-microsoft" viewBox="0 0 16 16">
+                    <path d="M7.462 0H0v7.19h7.462V0zM16 0H8.538v7.19H16V0zM7.462 8.211H0V16h7.462V8.211zm8.538 0H8.538V16H16V8.211z"/>
+                  </svg>
+                {% else %}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-ubuntu" viewBox="0 0 16 16">
+                    <path d="M2.273 9.53a2.273 2.273 0 1 0 0-4.546 2.273 2.273 0 0 0 0 4.547Zm9.467-4.98a2.273 2.273 0 1 0 0-4.547 2.273 2.273 0 0 0 0 4.547ZM7.464 15.8c.828-.016 1.565-.333 2.11-.84l-2.022-2.022a3.262 3.262 0 0 1-1.353.123L4.175 15.09c.41.442.992.695 1.637.71Zm3.362-3.044c.54.143.993.453 1.303.873l2.021-2.022a5.41 5.41 0 0 0-1.222-2.316l-2.102 2.102c.1.446.064.937-.1 1.363Zm-4.134-9.333c-.446-.1-.937-.064-1.363.1L3.227 1.419A5.41 5.41 0 0 0 1.419 3.227l2.102 2.102c.143-.54.453-.993.873-1.303ZM1.419 12.773a5.41 5.41 0 0 0 1.808 1.808l2.102-2.102c-.42-.31-.73-.763-.873-1.303l-3.037.603V12.77Zm12.763-11.354A5.41 5.41 0 0 0 12.774 1.42l-.603 3.037c.54.143.993.453 1.303.873l2.022-3.037v-.877Zm1.082 8.111a2.273 2.273 0 1 0 0-4.546 2.273 2.273 0 0 0 0 4.546Z"/>
+                  </svg>
+                {% endif %}
+                {{ server.os_type|capitalize }}
+              </span>
+            </div>
+            <span class="badge bg-dark border border-secondary text-secondary x-small">{{ server.protocol|upper }} : {{ server.port }}</span>
+          </td>
+          <td>
+            <span class="badge status-{{ server.status }}">{{ server.status|capitalize }}</span>
+          </td>
+          <td>
+            <div class="text-secondary small truncate" style="max-width: 200px;" title="{{ server.base_path }}">
+              {{ server.base_path }}
+            </div>
+          </td>
+          <td class="text-end">
+            <div class="d-flex justify-content-end gap-2">
+              {% if user_has_role(user, 'Super Admin', 'Admin') %}
+              <button class="btn btn-sm btn-dark border-secondary px-3" data-bs-toggle="modal" data-bs-target="#editServer{{ server.id }}">Edit</button>
+              {% endif %}
+              {% if user_has_role(user, 'Super Admin') %}
+              <form action="{{ url_for('delete_server', server_id=server.id) }}" method="POST" onsubmit="return confirm('Delete this server and all related jobs?')">
+                <button class="btn btn-sm btn-outline-danger px-3">Delete</button>
+              </form>
+              {% endif %}
+              {% if not user_has_role(user, 'Super Admin', 'Admin') %}
+              <span class="text-secondary small">View Only</span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% for server in servers %}
+<!-- Edit Modal (Internal) -->
+<div class="modal fade" id="editServer{{ server.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content bg-dark border-secondary shadow-lg" action="{{ url_for('update_server', server_id=server.id) }}" method="POST">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Edit Server: {{ server.name or "ID: " ~ server.id }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">SERVER NAME</label>
+            <input type="text" name="name" class="form-control" value="{{ server.name }}" required>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label text-secondary small fw-bold">HOSTNAME / FQDN</label>
+            <input type="text" name="hostname" class="form-control" value="{{ server.hostname }}" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-secondary small fw-bold">PORT</label>
+            <input type="number" name="port" class="form-control" value="{{ server.port }}" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">BASE PATH (SANDBOX)</label>
+            <input type="text" name="base_path" class="form-control" value="{{ server.base_path }}" required>
+          </div>
+          {% if user_has_role(user, 'Super Admin') %}
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">ASSIGN ORGANIZATION</label>
+            <select name="organization_id" class="form-select bg-dark border-secondary text-white">
+              <option value="">Global / None (Super Admin)</option>
+              {% for org in organizations %}
+              <option value="{{ org.id }}" {% if server.organization_id == org.id %}selected{% endif %}>{{ org.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          <div class="col-12">
+            <div class="form-check form-switch mt-2">
+              <input class="form-check-input" type="checkbox" name="is_enabled" id="enable{{ server.id }}" {% if server.is_enabled %}checked{% endif %}>
+              <label class="form-check-label text-secondary" for="enable{{ server.id }}">Server Enabled</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-dark border-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Add Server Modal -->
+<div class="modal fade" id="addServerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form class="modal-content bg-dark border-secondary shadow-lg" action="{{ url_for('create_server') }}" method="POST">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Register New Server</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <label class="form-label text-secondary small fw-bold">SERVER DISPLAY NAME</label>
+            <input type="text" name="name" class="form-control px-3 py-2" placeholder="e.g. Production Web-01" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small fw-bold">HOSTNAME OR IP ADDRESS</label>
+            <input type="text" name="hostname" class="form-control px-3 py-2" placeholder="10.0.0.5 or web.local" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-secondary small fw-bold">OS TYPE</label>
+            <select name="os_type" class="form-select px-3 py-2">
+              <option value="linux">Linux / Ubuntu</option>
+              <option value="windows">Windows Server</option>
+              <option value="macos">macOS</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-secondary small fw-bold">PROTOCOL</label>
+            <select name="protocol" class="form-select px-3 py-2">
+              <option value="ssh">SSH (Linux/macOS)</option>
+              <option value="winrm">WinRM (Windows)</option>
+              <option value="local">Local Agent</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-secondary small fw-bold">PORT</label>
+            <input type="number" name="port" class="form-control px-3 py-2" value="22" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">BASE PATH (RESTRICTED SANDBOX)</label>
+            <input type="text" name="base_path" class="form-control px-3 py-2" placeholder="/var/www/data or C:\Transfer" required>
+            <div class="form-text text-muted x-small mt-2">Agents will only be able to access files within this directory tree.</div>
+          </div>
+          {% if user_has_role(user, 'Super Admin') %}
+          <div class="col-12">
+            <label class="form-label text-secondary small fw-bold">ASSIGN ORGANIZATION</label>
+            <select name="organization_id" class="form-select bg-dark border-secondary text-white px-3 py-2">
+              <option value="">Global / None (Super Admin)</option>
+              {% for org in organizations %}
+              <option value="{{ org.id }}">{{ org.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-dark border-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary px-5">Add Server</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .x-small { font-size: 11px; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const searchInput = document.getElementById('serverSearch');
+  const tableBody = document.getElementById('serverTableBody');
+
+  if (searchInput && tableBody) {
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const rows = tableBody.querySelectorAll('tr');
+
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

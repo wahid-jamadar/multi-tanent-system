@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}System Logs - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Infrastructure Logs</h1>
+    <p class="text-secondary mb-0">
+      {% if filtered_agent %}
+        Showing logs for Agent: <strong class="text-info">{{ filtered_agent.agent_name or filtered_agent.agent_uuid[:8] }}</strong>
+      {% else %}
+        Centralized audit trail and system events for all managed nodes.
+      {% endif %}
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <div class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 d-flex align-items-center gap-2 px-3 py-2">
+      <span class="live-indicator"></span>
+      LIVE MONITORING
+    </div>
+    {% if filtered_agent %}
+      <a class="btn btn-dark border-secondary px-3" href="{{ url_for('logs_page') }}">Clear Filter</a>
+    {% else %}
+      <button class="btn btn-dark border-secondary px-3" onclick="location.reload()">Clear View</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-9">
+    <!-- Main Logs -->
+    <section class="section-panel p-0 overflow-hidden">
+      <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center bg-dark bg-opacity-25">
+        <h2 class="h6 mb-0 fw-bold">System Events</h2>
+        <div class="d-flex gap-2">
+          <input type="text" class="form-control form-control-sm bg-dark border-secondary" placeholder="Filter messages..." style="width: 200px">
+        </div>
+      </div>
+      <div class="log-container" id="systemLogs">
+        {% for log in logs %}
+        <div class="log-entry">
+          <span class="log-time">[<span class="local-time" data-utc="{{ log.created_at.isoformat() ~ 'Z' }}" data-format="time">{{ log.created_at.strftime('%H:%M:%S') }}</span>]</span>
+          <span class="badge x-small status-{{ log.level|lower }} me-2" style="width: 70px">{{ log.level }}</span>
+          <span class="text-secondary small me-2">[{{ log.component }}]</span>
+          <span class="log-message">
+            {{ log.message }}
+            {% if log.context %}
+              {% set ctx = log.context %}
+              {% if ctx.server_name %}
+                <span class="badge bg-secondary text-light x-small ms-2"><i class="bi bi-hdd me-1"></i>{{ ctx.server_name }}</span>
+              {% endif %}
+              {% if ctx.path %}
+                <span class="text-secondary small ms-2">{{ ctx.method }} {{ ctx.path }} ({{ ctx.status }})</span>
+              {% endif %}
+              {% if ctx.job_uuid %}
+                <span class="text-secondary small ms-2">Job: {{ ctx.job_uuid[:8] }}...</span>
+              {% endif %}
+              <button class="btn btn-sm btn-link text-secondary p-0 ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#logCtx{{ log.id }}">
+                <i class="bi bi-info-circle"></i> Details
+              </button>
+            {% endif %}
+          </span>
+          {% if log.context %}
+          <div class="collapse mt-1 w-100" id="logCtx{{ log.id }}">
+            <pre class="bg-dark text-light p-2 rounded x-small mb-0 border border-secondary border-opacity-25" style="white-space: pre-wrap; font-family: monospace;"><code>{{ log.context | tojson(indent=2) }}</code></pre>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="col-lg-3">
+    <!-- Audit Trail -->
+    <section class="section-panel p-0 overflow-hidden h-100">
+      <div class="p-3 border-bottom border-secondary border-opacity-25 bg-dark bg-opacity-25">
+        <h2 class="h6 mb-0 fw-bold">Audit Trail</h2>
+      </div>
+      <div class="p-3">
+        <div class="d-flex flex-column gap-3">
+          {% for audit in audits %}
+          <div class="audit-item pb-3 border-bottom border-secondary border-opacity-25">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="fw-bold small text-info">{{ audit.action }}</span>
+              <span class="text-secondary x-small local-time" data-utc="{{ audit.created_at.isoformat() ~ 'Z' }}" data-format="short-time">{{ audit.created_at.strftime('%H:%M') }}</span>
+            </div>
+            <div class="text-secondary x-small mb-1">
+              User ID: {{ audit.user_id or "System" }}
+            </div>
+            <div class="text-muted x-small truncate" title="{{ audit.details }}">
+              {{ audit.details|tojson if audit.details else "No details" }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+  .x-small { font-size: 11px; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  
+  .log-container {
+    height: 600px;
+    background: #05070a;
+    border: none;
+    border-radius: 0;
+  }
+  
+  .log-entry {
+    padding: 2px 16px;
+    border-left: 2px solid transparent;
+  }
+  
+  .log-entry:hover {
+    background: rgba(255, 255, 255, 0.02);
+    border-left-color: var(--fb-primary);
+  }
+
+  .status-info { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; }
+  .status-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+  .status-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Simple auto-scroll to bottom for logs
+  const logContainer = document.getElementById('systemLogs');
+  if (logContainer) {
+    logContainer.scrollTop = logContainer.scrollHeight;
+  }
+</script>
+{% endblock %}

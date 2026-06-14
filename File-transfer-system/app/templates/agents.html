@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Agents Monitoring - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Infrastructure Agents</h1>
+    <p class="text-secondary mb-0">Realtime monitoring and health status of connected edge agents.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-dark border-secondary d-flex align-items-center gap-2 px-3" onclick="location.reload()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="metric">
+      <span>Total Agents</span>
+      <strong>{{ stats.total }}</strong>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric border-success border-opacity-25">
+      <span class="text-success">Online Agents</span>
+      <strong class="text-success">{{ stats.online }}</strong>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric border-danger border-opacity-25">
+      <span class="text-danger">Offline Agents</span>
+      <strong class="text-danger">{{ stats.offline }}</strong>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric border-warning border-opacity-25">
+      <span class="text-warning">Busy Agents</span>
+      <strong class="text-warning">{{ stats.busy if stats.busy is defined else 0 }}</strong>
+    </div>
+  </div>
+</div>
+
+<!-- Agents Table -->
+<div class="section-panel p-0 overflow-hidden">
+  <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center bg-dark bg-opacity-25">
+    <div class="d-flex align-items-center gap-3">
+      <h2 class="h6 mb-0 fw-bold">Connected Agents</h2>
+      <span class="badge bg-dark border border-secondary text-secondary">{{ agents|length }} Total</span>
+    </div>
+    <div class="d-flex gap-2">
+      <input type="text" class="form-control form-control-sm bg-dark border-secondary text-white" placeholder="Filter agents..." style="width: 200px">
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Agent Name</th>
+          <th>ID / Hostname</th>
+          <th>OS</th>
+          <th>Status</th>
+          <th>Last Heartbeat</th>
+          <th>Active Jobs</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for agent in agents %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div class="p-2 rounded bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cpu" viewBox="0 0 16 16">
+                  <path d="M5 0a.5.5 0 0 1 .5.5V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2A2.5 2.5 0 0 1 14 4.5h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14a2.5 2.5 0 0 1-2.5 2.5v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14A2.5 2.5 0 0 1 2 11.5H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2A2.5 2.5 0 0 1 4.5 2V.5A.5.5 0 0 1 5 0m-.5 3A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 11.5 3zM5 5h6v6H5z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="fw-bold">{{ agent.agent_name }}</div>
+                <div class="text-secondary x-small">v{{ agent.version or "1.0.0" }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="font-monospace small text-info">{{ agent.agent_uuid[:8] }}...</div>
+            <div class="text-secondary small">{{ agent.server.hostname if agent.server else "Unknown" }}</div>
+          </td>
+          <td>
+            <span class="text-secondary small d-flex align-items-center gap-1">
+              {% if agent.server and agent.server.os_type == 'windows' %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-microsoft" viewBox="0 0 16 16">
+                  <path d="M7.462 0H0v7.19h7.462V0zM16 0H8.538v7.19H16V0zM7.462 8.211H0V16h7.462V8.211zm8.538 0H8.538V16H16V8.211z"/>
+                </svg>
+              {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-ubuntu" viewBox="0 0 16 16">
+                  <path d="M2.273 9.53a2.273 2.273 0 1 0 0-4.546 2.273 2.273 0 0 0 0 4.547Zm9.467-4.98a2.273 2.273 0 1 0 0-4.547 2.273 2.273 0 0 0 0 4.547ZM7.464 15.8c.828-.016 1.565-.333 2.11-.84l-2.022-2.022a3.262 3.262 0 0 1-1.353.123L4.175 15.09c.41.442.992.695 1.637.71Zm3.362-3.044c.54.143.993.453 1.303.873l2.021-2.022a5.41 5.41 0 0 0-1.222-2.316l-2.102 2.102c.1.446.064.937-.1 1.363Zm-4.134-9.333c-.446-.1-.937-.064-1.363.1L3.227 1.419A5.41 5.41 0 0 0 1.419 3.227l2.102 2.102c.143-.54.453-.993.873-1.303ZM1.419 12.773a5.41 5.41 0 0 0 1.808 1.808l2.102-2.102c-.42-.31-.73-.763-.873-1.303l-3.037.603V12.77Zm12.763-11.354A5.41 5.41 0 0 0 12.774 1.42l-.603 3.037c.54.143.993.453 1.303.873l2.022-3.037v-.877Zm1.082 8.111a2.273 2.273 0 1 0 0-4.546 2.273 2.273 0 0 0 0 4.546Z"/>
+                </svg>
+              {% endif %}
+              {{ agent.server.os_type|capitalize if agent.server else "Linux" }}
+            </span>
+          </td>
+          <td>
+            <span class="badge status-{{ agent.status }} d-inline-flex align-items-center gap-1">
+              <span class="live-indicator" style="width: 6px; height: 6px; box-shadow: none; animation: none;"></span>
+              {{ agent.status|capitalize }}
+            </span>
+          </td>
+          <td>
+            <div class="text-secondary small">
+              {% if agent.last_heartbeat_at %}
+                <span class="local-time" data-utc="{{ agent.last_heartbeat_at.isoformat() ~ 'Z' }}" data-format="datetime-seconds">{{ agent.last_heartbeat_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+              {% else %}
+                Never
+              {% endif %}
+            </div>
+            <div class="x-small text-muted">{% if agent.last_heartbeat_at %}Active now{% else %}Disconnected{% endif %}</div>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 4px; background: rgba(255,255,255,0.05); width: 60px;">
+                <div class="progress-bar bg-primary" style="width: 0%"></div>
+              </div>
+              <span class="text-secondary small">0</span>
+            </div>
+          </td>
+          <td>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-dark border-secondary px-2" data-bs-toggle="dropdown">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
+                  <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+                </svg>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-dark border-secondary shadow-lg">
+                <li><a class="dropdown-item" href="{{ url_for('logs_page', agent_id=agent.id) }}">View Logs</a></li>
+                <li><a class="dropdown-item" href="#">Restart Agent</a></li>
+                {% if user_has_role(user, 'Super Admin') %}
+                <li><hr class="dropdown-divider border-secondary"></li>
+                <li>
+                  <form action="{{ url_for('api_delete_agent', agent_id=agent.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete agent {{ agent.agent_name }}?')">
+                    <button type="submit" class="dropdown-item text-danger">Delete Agent</button>
+                  </form>
+                </li>
+                {% endif %}
+              </ul>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not agents %}
+        <tr>
+          <td colspan="7" class="text-center py-5 text-secondary">
+            <div class="mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-hdd-network opacity-25" viewBox="0 0 16 16">
+                <path d="M4.5 5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1M3 4.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m2 7a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m7-7a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/>
+                <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m3.5-.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                <path d="M1 9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1zM0 10a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1zm7.5-9a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v-5a.5.5 0 0 1 .5-.5M2 1a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v-5A.5.5 0 0 1 2 1m10 0a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v-5a.5.5 0 0 1 .5-.5"/>
+              </svg>
+            </div>
+            <p>No agents connected yet. Connect an agent to see it here.</p>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .x-small { font-size: 11px; }
+  .tracking-tight { letter-spacing: -0.02em; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}System Alerts - FileBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Security & System Alerts</h1>
+    <p class="text-secondary mb-0">Monitor infrastructure health and security events in realtime.</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if user_has_role(user, 'Super Admin', 'Admin') %}
+    <form action="{{ url_for('resolve_all_alerts') }}" method="POST" class="m-0">
+      <button type="submit" class="btn btn-dark border-secondary px-3">Mark All Resolved</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="section-panel p-0 overflow-hidden">
+  <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center bg-dark bg-opacity-25">
+    <div class="d-flex align-items-center gap-3">
+      <h2 class="h6 mb-0 fw-bold">Active Notifications</h2>
+      <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">{{ alerts|selectattr('status', 'equalto', 'open')|list|length }} Open</span>
+    </div>
+    <div class="d-flex gap-2">
+      <select class="form-select form-select-sm bg-dark border-secondary text-white" style="width: 150px">
+        <option>All Severities</option>
+        <option>Critical</option>
+        <option>Warning</option>
+        <option>Info</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th style="width: 120px;">Severity</th>
+          <th>Title & Message</th>
+          <th>Source</th>
+          <th>Created</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alert in alerts %}
+        <tr class="{% if alert.status == 'open' %}bg-white bg-opacity-05{% endif %}">
+          <td>
+            <span class="badge status-{{ alert.severity }} text-uppercase x-small px-2 py-1">{{ alert.severity }}</span>
+          </td>
+          <td>
+            <div class="fw-bold text-light mb-1">{{ alert.title }}</div>
+            <div class="text-secondary small">{{ alert.message }}</div>
+          </td>
+          <td>
+            <div class="text-secondary small d-flex align-items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-hdd-network" viewBox="0 0 16 16">
+                <path d="M4.5 5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1M3 4.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m2 7a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m7-7a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/>
+                <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m3.5-.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                <path d="M1 9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1zM0 10a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1zm7.5-9a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v-5a.5.5 0 0 1 .5-.5M2 1a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v-5A.5.5 0 0 1 2 1m10 0a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v-5a.5.5 0 0 1 .5-.5"/>
+              </svg>
+              {{ alert.source_type|capitalize if alert.source_type else "System" }}
+            </div>
+          </td>
+          <td>
+            <div class="text-secondary small local-time" data-utc="{{ alert.created_at.isoformat() ~ 'Z' }}" data-format="datetime">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+          </td>
+          <td class="text-end">
+            {% if alert.status == 'open' %}
+              {% if user_has_role(user, 'Super Admin', 'Admin') %}
+              <form action="{{ url_for('acknowledge_alert', alert_id=alert.id) }}" method="POST">
+                <button class="btn btn-sm btn-dark border-secondary px-3">Acknowledge</button>
+              </form>
+              {% else %}
+              <span class="text-secondary small">Open</span>
+              {% endif %}
+            {% else %}
+            <span class="text-muted small">Resolved</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not alerts %}
+        <tr>
+          <td colspan="5" class="text-center py-5 text-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-shield-check mb-3 opacity-25" viewBox="0 0 16 16">
+              <path d="M8 14.933a.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067v13.866zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/>
+            </svg>
+            <p>System is healthy. No active alerts.</p>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .x-small { font-size: 11px; }
+  .bg-white.bg-opacity-05 { background: rgba(255, 255, 255, 0.03) !important; }
+</style>
+{% endblock %}

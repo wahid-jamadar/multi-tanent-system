@@ -1,0 +1,15 @@
+[Unit]
+Description=BatchHost-Pro Agent Runtime
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/root/batchhost-pro/batchhost-agent daemon
+Restart=always
+RestartSec=10
+Environment="BATCHHOST_AGENT_STATE_DIR=/root/batchhost-pro"
+# Uncomment and set the URL if you need to point to a specific server:
+# Environment="BATCHHOST_SERVER_URL=https://172.100.31.40:5000"
+
+[Install]
+WantedBy=multi-user.target

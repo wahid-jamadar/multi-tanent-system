@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central Auth Portal — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0B1220;
+      --bg2: #111827;
+      --bg3: #1A2332;
+      --border: #1F2A3A;
+      --text: #E5E7EB;
+      --text2: #9CA3AF;
+      --text3: #6B7280;
+      --accent: #8B5CF6;
+      --accent2: #7C3AED;
+      --green: #22C55E;
+      --red: #EF4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg) url('/images/login-page-bg-image.png') no-repeat center center fixed;
+      background-size: cover;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image: linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+      pointer-events: none;
+    }
+
+    .card {
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 16px;
+      padding: 44px 40px;
+      width: 440px;
+      max-width: 95vw;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      animation: cardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes cardIn {
+      from {
+        transform: translateY(24px) scale(0.96);
+        opacity: 0;
+      }
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.28);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .logo-text {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-text span {
+      color: var(--accent);
+    }
+
+    h2 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .sub {
+      font-size: 14px;
+      color: var(--text2);
+      margin-bottom: 28px;
+    }
+
+    .form-row {
+      margin-bottom: 18px;
+    }
+
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 6px;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-family: var(--sans);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: var(--sans);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .btn:hover {
+      background: var(--accent2);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(139, 92, 246, 0.2);
+    }
+
+    .btn:active {
+      transform: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .switch-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--text3);
+      line-height: 1.4;
+    }
+
+    .flash {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .flash-msg {
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: slideIn 0.25s ease, fadeOut 0.3s ease 2.7s forwards;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .flash-msg.success {
+      background: rgba(34, 197, 94, 0.10);
+      color: var(--green);
+      border: 1px solid rgba(34, 197, 94, 0.26);
+    }
+
+    .flash-msg.error {
+      background: rgba(239, 68, 68, 0.11);
+      color: var(--red);
+      border: 1px solid rgba(239, 68, 68, 0.28);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(60px);
+        opacity: 0;
+      }
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: translateX(60px);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SPLASH SCREEN (Central Portal specific)
+       ═══════════════════════════════════════════════════════════════ */
+    .splash-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: #070B14;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .splash-overlay.fade-out {
+      opacity: 0;
+      transform: scale(1.03);
+      pointer-events: none;
+    }
+
+    .splash-grid {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image: linear-gradient(#1F2A3A 1px, transparent 1px),
+        linear-gradient(90deg, #1F2A3A 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: splashGridDrift 20s linear infinite;
+    }
+
+    @keyframes splashGridDrift {
+      to {
+        background-position: 40px 40px;
+      }
+    }
+
+    .splash-glow {
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, rgba(139, 92, 246, 0.04) 60%, transparent 80%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      pointer-events: none;
+      animation: splashGlowPulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes splashGlowPulse {
+
+      0%,
+      100% {
+        opacity: 0.6;
+        transform: translate(-50%, -60%) scale(1);
+      }
+
+      50% {
+        opacity: 1;
+        transform: translate(-50%, -60%) scale(1.08);
+      }
+    }
+
+    .splash-particles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .splash-particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.35);
+      animation: splashParticleFloat linear infinite;
+    }
+
+    .splash-particle:nth-child(1) {
+      left: 15%;
+      top: 80%;
+      animation-duration: 4s;
+      width: 2px;
+      height: 2px;
+    }
+
+    .splash-particle:nth-child(2) {
+      left: 30%;
+      top: 90%;
+      animation-duration: 5s;
+    }
+
+    .splash-particle:nth-child(3) {
+      left: 50%;
+      top: 85%;
+      animation-duration: 3.5s;
+      width: 4px;
+      height: 4px;
+    }
+
+    .splash-particle:nth-child(4) {
+      left: 70%;
+      top: 88%;
+      animation-duration: 4.5s;
+    }
+
+    .splash-particle:nth-child(5) {
+      left: 85%;
+      top: 82%;
+      animation-duration: 5.5s;
+    }
+
+    @keyframes splashParticleFloat {
+      from {
+        transform: translateY(0) scale(1);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 1;
+      }
+
+      90% {
+        opacity: 1;
+      }
+
+      to {
+        transform: translateY(-100vh) scale(0.3);
+        opacity: 0;
+      }
+    }
+
+    .splash-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .splash-logo-container {
+      width: 90px;
+      height: 90px;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.28);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.3));
+      animation: splashLogoIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes splashLogoIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.82) translateY(10px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .splash-brand {
+      font-size: 36px;
+      font-weight: 800;
+      color: #E5E7EB;
+      letter-spacing: -0.03em;
+      opacity: 0;
+      transform: translateY(15px);
+      animation: splashTextIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+      margin-bottom: 8px;
+    }
+
+    .splash-brand span {
+      color: var(--accent);
+    }
+
+    .splash-tagline {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: splashTextIn 0.5s ease 0.6s forwards;
+      margin-bottom: 36px;
+    }
+
+    .splash-progress-wrap {
+      width: 260px;
+      height: 4px;
+      background: rgba(31, 42, 58, 0.8);
+      border-radius: 4px;
+      overflow: hidden;
+      opacity: 0;
+      animation: splashTextIn 0.3s ease 0.8s forwards;
+      margin-bottom: 16px;
+    }
+
+    .splash-progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--accent) 0%, #6366F1 50%, #EC4899 100%);
+      animation: splashFill 1.8s cubic-bezier(0.4, 0, 0.2, 1) 0.8s forwards;
+    }
+
+    @keyframes splashFill {
+      0% {
+        width: 0%;
+      }
+
+      100% {
+        width: 100%;
+      }
+    }
+
+    .splash-status {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #4B5563;
+      opacity: 0;
+      animation: splashTextIn 0.3s ease 1s forwards;
+    }
+
+    .splash-version {
+      position: absolute;
+      bottom: 32px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #374151;
+      opacity: 0;
+      animation: splashTextIn 0.4s ease 1.2s forwards;
+    }
+
+    @keyframes splashTextIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- SPLASH SCREEN OVERLAY -->
+  <div id="splashOverlay" class="splash-overlay" role="presentation" aria-hidden="true">
+    <div class="splash-grid"></div>
+    <div class="splash-glow"></div>
+    <div class="splash-particles">
+      <div class="splash-particle"></div>
+      <div class="splash-particle"></div>
+      <div class="splash-particle"></div>
+      <div class="splash-particle"></div>
+      <div class="splash-particle"></div>
+    </div>
+    <div class="splash-content">
+      <div class="splash-logo-container">🚀</div>
+      <div class="splash-brand">Central<span>Portal</span></div>
+      <div class="splash-tagline">Unified Multi-Tenant System</div>
+      <div class="splash-progress-wrap">
+        <div class="splash-progress-fill"></div>
+      </div>
+      <div class="splash-status">Authenticating secure gateway…</div>
+    </div>
+    <div class="splash-version">v1.0</div>
+  </div>
+
+  <div class="bg-grid"></div>
+  <div class="glow"></div>
+  <div class="flash" id="flashContainer"></div>
+
+  <!-- LOGIN CARD -->
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">🔑</div>
+      <span class="logo-text">Central<span>Portal</span></span>
+    </div>
+    <h2>Welcome</h2>
+    <p class="sub">Sign in to access all authorized systems</p>
+
+    <div class="form-row">
+      <label>Email Address</label>
+      <input type="email" id="email" placeholder="Enter your email" autocomplete="email">
+    </div>
+    <div class="form-row">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="switch-link">
+      This is a centralized gateway.<br>
+      Contact your system administrator for access requests.
+    </div>
+  </div>
+
+  <script>
+    function flash(msg, type = 'error') {
+      const c = document.getElementById('flashContainer');
+      const el = document.createElement('div'); el.className = `flash-msg ${type}`;
+      const icons = { success: '✓', error: '✗' };
+      el.innerHTML = `<span>${icons[type] || '•'}</span> ${msg}`; c.appendChild(el);
+      setTimeout(() => el.remove(), 3100);
+    }
+
+    async function doLogin() {
+      const btn = document.getElementById('loginBtn');
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email || !password) { flash('Please fill in all fields'); return; }
+      btn.disabled = true; btn.textContent = 'Signing in…';
+      try {
+        const r = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const d = await r.json();
+        if (d.success) {
+          flash('Login successful!', 'success');
+          setTimeout(() => window.location.href = d.redirect || '/select', 600);
+        } else {
+          flash(d.message || 'Invalid credentials');
+          btn.disabled = false; btn.textContent = 'Sign In';
+        }
+      } catch (e) {
+        flash('Connection error');
+        btn.disabled = false; btn.textContent = 'Sign In';
+      }
+    }
+
+    // Splash logic
+    (function initSplash() {
+      const overlay = document.getElementById('splashOverlay');
+      if (!overlay) return;
+      if (sessionStorage.getItem('portal_splash_shown')) {
+        overlay.remove();
+        return;
+      }
+      sessionStorage.setItem('portal_splash_shown', 'true');
+      setTimeout(() => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 500);
+      }, 1800);
+    })();
+  </script>
+</body>
+
+</html>

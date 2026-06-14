@@ -157,6 +157,6 @@ In the event of a primary site failure, traffic is rerouted to a secondary failo
 - **Data-Plane**: The part of a network that carries user traffic.
 - **Control-Plane**: The part of a network that manages the data-plane.
 
-## References
-**Wahid Jamadar**
+## Author
+**Wahid Jamadar** <br>
 *Python Developer & AI Engineer*

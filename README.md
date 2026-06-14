@@ -158,5 +158,5 @@ In the event of a primary site failure, traffic is rerouted to a secondary failo
 - **Control-Plane**: The part of a network that manages the data-plane.
 
 ## References
-1. System Architecture Documentation - `01-high-level-architecture.md`
-2. Centralized Authentication Specs - `centralized login for batchhost-pro and filebridge.txt`
+**Wahid Jamadar**
+*Python Developer & AI Engineer*
